@@ -1,0 +1,81 @@
+name: PR Title Lint
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  lint:
+    name: Validate conventional commit format
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        id: lint
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            style
+            refactor
+            perf
+            test
+            ci
+            build
+          requireScope: false
+          subjectLength: 100
+          # If the PR title doesn't match, the action will fail and
+          # post a comment explaining the expected format.
+
+      - name: Auto-add conventional commit label
+        if: steps.lint.outputs.type != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const type = '${{ steps.lint.outputs.type }}';
+            const label = `type:${type}`;
+
+            // Colour palette for conventional commit labels
+            const colors = {
+              feature: '07E34A',
+              bug: 'D73A4A',
+              chore: 'BFD4F2',
+              docs: '0075CA',
+              style: 'BFD4F2',
+              refactor: 'FFD700',
+              performance: 'F9D71C',
+              test: 'C5DEF5',
+              ci: 'F9D71C',
+              build: 'BFD4F2',
+            };
+            const color = colors[type] || 'BFD4F2';
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [label],
+              });
+            } catch {
+              // Label doesn't exist yet — create it then add
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+                color,
+              });
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [label],
+              });
+            }

@@ -1,0 +1,66 @@
+# Release drafter configuration.
+# Auto-generates release notes from merged PR labels.
+# See: https://github.com/release-drafter/release-drafter
+
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'type:feature'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'type:bug'
+      - 'type:fix'
+  - title: '📖 Documentation'
+    labels:
+      - 'type:docs'
+  - title: '⚡ Performance'
+    labels:
+      - 'type:performance'
+  - title: '✅ Tests'
+    labels:
+      - 'type:test'
+  - title: '🧰 Maintenance'
+    labels:
+      - 'type:chore'
+      - 'type:refactor'
+      - 'type:style'
+      - 'type:ci'
+      - 'type:build'
+  - title: '🔧 Dependencies'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels:
+      - 'type:breaking'
+  minor:
+    labels:
+      - 'type:feature'
+  patch:
+    labels:
+      - 'type:bug'
+      - 'type:fix'
+      - 'type:chore'
+      - 'type:docs'
+      - 'type:refactor'
+      - 'type:style'
+      - 'type:performance'
+      - 'type:test'
+      - 'type:ci'
+      - 'type:build'
+      - 'dependencies'
+      - 'github-actions'
+  default: patch
+
+template: |
+  $CHANGES
+
+  **Full Changelog:** https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

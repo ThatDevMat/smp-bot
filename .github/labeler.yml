@@ -1,0 +1,68 @@
+# Auto-label PRs based on changed files.
+# Used by .github/workflows/pr-labeler.yml
+# See: https://github.com/actions/labeler
+
+area:core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/index.js
+          - src/config.js
+          - src/events/**/*
+
+area:commands:
+  - changed-files:
+      - any-glob-to-any-file: src/commands/**/*
+
+area:webhooks:
+  - changed-files:
+      - any-glob-to-any-file: src/webhooks/**/*
+
+area:database:
+  - changed-files:
+      - any-glob-to-any-file: src/db/**/*
+
+area:integrations:
+  - changed-files:
+      - any-glob-to-any-file: src/integrations/**/*
+
+area:utils:
+  - changed-files:
+      - any-glob-to-any-file: src/utils/**/*
+
+area:schemas:
+  - changed-files:
+      - any-glob-to-any-file: src/schemas/**/*
+
+area:ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**/*
+          - .github/dependabot.yml
+          - .github/labeler.yml
+          - .github/release-drafter.yml
+
+area:tests:
+  - changed-files:
+      - any-glob-to-any-file: tests/**/*
+
+area:docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**/*
+          - '*.md'
+          - .github/ISSUE_TEMPLATE/**/*
+          - .github/PULL_REQUEST_TEMPLATE.md
+
+area:docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - Dockerfile
+          - docker/**/*
+          - docker-compose*.yml
+          - .dockerignore
+
+area:deps:
+  - changed-files:
+      - any-glob-to-any-file:
+          - package.json
+          - package-lock.json

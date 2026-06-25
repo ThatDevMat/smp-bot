@@ -147,3 +147,15 @@ jobs:
 
       - name: Run npm audit (production deps only)
         run: npm audit --audit-level=high --omit=dev
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production stage
+        run: docker build --target production --tag smp-bot:production .
+
+      - name: Build dev stage
+        run: docker build --target dev --tag smp-bot:dev .

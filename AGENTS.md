@@ -19,36 +19,42 @@ better-sqlite3, mysql2, and rcon-client.
 
 ## 2. Repository Map
 
-| Path                               | Purpose                                                                                             |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `src/commands/`                    | 13 slash command handlers, one file per command                                                     |
-| `src/events/`                      | discord.js lifecycle event handlers (ready.js, interactionCreate.js)                                |
-| `src/webhooks/`                    | Express router for the DiscordSRV webhook receiver                                                  |
-| `src/db/`                          | SQLite schema initialisation and all query helpers                                                  |
-| `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                                     |
-| `src/utils/`                       | Embed builders, permission checks, player UUID resolution, logger, backup, cache, shutdown handlers |
-| **`src/schemas/`**                 | **Zod validation schemas for all command inputs and webhook payloads**                              |
-| `src/config.js`                    | dotenv config loader with `validateConfig()`                                                        |
-| `src/index.js`                     | Entry point — boot sequence, never excluded from lint                                               |
-| `tests/`                           | Jest test files mirroring `src/` structure                                                          |
-| `tests/setup.js`                   | Shared test factories and mocks                                                                     |
-| `.github/dependabot.yml`           | Dependabot config for npm and GitHub Actions dependency updates                                     |
-| `.github/workflows/ci.yml`         | CI pipeline (lint → test + security audit)                                                          |
-| `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                                                         |
-| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                                               |
-| `.github/ISSUE_TEMPLATE/`          | Bug report and feature request templates                                                            |
-| `docker/`                          | Docker Compose setup: MySQL init script, mock DiscordSRV webhook service                            |
-| `Dockerfile`                       | Multi-stage Dockerfile (deps, dev, production)                                                      |
-| `docker-compose.yml`               | Production Compose file (bot + MySQL with healthcheck)                                              |
-| `.dockerignore`                    | Excludes node_modules, .env, coverage, logs, backups from Docker build                              |
-| `docs/`                            | Onboarding, architecture, contributing, integrations, troubleshooting, restore guide                |
-| `backups/`                         | Automated SQLite backup files (gitignored — managed by the backup scheduler)                        |
-| `jest.config.js`                   | Jest config with 80% coverage threshold                                                             |
-| `ecosystem.config.js`              | PM2 process manager config                                                                          |
-| `.eslintrc.json`                   | ESLint rules                                                                                        |
-| `.prettierrc`                      | Prettier formatting configuration                                                                   |
-| `.env.example`                     | Template for all required environment variables                                                     |
-| `deploy-commands.js`               | Script to register slash commands with the Discord REST API                                         |
+| Path                                    | Purpose                                                                                             |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `src/commands/`                         | 13 slash command handlers, one file per command                                                     |
+| `src/events/`                           | discord.js lifecycle event handlers (ready.js, interactionCreate.js)                                |
+| `src/webhooks/`                         | Express router for the DiscordSRV webhook receiver                                                  |
+| `src/db/`                               | SQLite schema initialisation and all query helpers                                                  |
+| `src/integrations/`                     | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                                     |
+| `src/utils/`                            | Embed builders, permission checks, player UUID resolution, logger, backup, cache, shutdown handlers |
+| **`src/schemas/`**                      | **Zod validation schemas for all command inputs and webhook payloads**                              |
+| `src/config.js`                         | dotenv config loader with `validateConfig()`                                                        |
+| `src/index.js`                          | Entry point — boot sequence, never excluded from lint                                               |
+| `tests/`                                | Jest test files mirroring `src/` structure                                                          |
+| `tests/setup.js`                        | Shared test factories and mocks                                                                     |
+| `.github/dependabot.yml`                | Dependabot config for npm and GitHub Actions dependency updates                                     |
+| `.github/labeler.yml`                   | Path-based PR auto-label rules (used by pr-labeler.yml)                                             |
+| `.github/release-drafter.yml`           | Release notes template grouped by `type:*` labels                                                   |
+| `.github/workflows/ci.yml`              | CI pipeline (lint → test + security audit + Docker build validation)                                |
+| `.github/workflows/codeql.yml`          | CodeQL security analysis (on push/PR + weekly schedule)                                             |
+| `.github/workflows/deploy.yml`          | Deploy pipeline (SSH + pm2, runs after CI passes on main)                                           |
+| `.github/workflows/pr-labeler.yml`      | Auto-labels PRs by changed file paths using .github/labeler.yml                                     |
+| `.github/workflows/pr-title-lint.yml`   | Validates PR titles use conventional commits format, auto-adds `type:*` label                       |
+| `.github/workflows/release-drafter.yml` | Auto-drafts GitHub releases from merged PRs, grouped by label                                       |
+| `.github/PULL_REQUEST_TEMPLATE.md`      | PR checklist template                                                                               |
+| `.github/ISSUE_TEMPLATE/`               | Bug report and feature request templates                                                            |
+| `docker/`                               | Docker Compose setup: MySQL init script, mock DiscordSRV webhook service                            |
+| `Dockerfile`                            | Multi-stage Dockerfile (deps, dev, production)                                                      |
+| `docker-compose.yml`                    | Production Compose file (bot + MySQL with healthcheck)                                              |
+| `.dockerignore`                         | Excludes node_modules, .env, coverage, logs, backups from Docker build                              |
+| `docs/`                                 | Onboarding, architecture, contributing, integrations, troubleshooting, restore guide                |
+| `backups/`                              | Automated SQLite backup files (gitignored — managed by the backup scheduler)                        |
+| `jest.config.js`                        | Jest config with 80% coverage threshold                                                             |
+| `ecosystem.config.js`                   | PM2 process manager config                                                                          |
+| `.eslintrc.json`                        | ESLint rules                                                                                        |
+| `.prettierrc`                           | Prettier formatting configuration                                                                   |
+| `.env.example`                          | Template for all required environment variables                                                     |
+| `deploy-commands.js`                    | Script to register slash commands with the Discord REST API                                         |
 
 ### Files and directories you must NEVER modify without explicit instruction
 
@@ -64,6 +70,12 @@ better-sqlite3, mysql2, and rcon-client.
   `npm run test:coverage`.
 - **`logs/`** — runtime output, gitignored. Never reference these files in
   source code.
+- **`type:*` labels** (e.g. `type:feature`, `type:bug`) — auto-managed by
+  the PR title lint workflow. Do not rename, delete, or reassign these
+  manually. If you add a new conventional commit type, update the type list
+  in `pr-title-lint.yml`, the colours map in the same file, the label match
+  lists in `release-drafter.yml`, and the version-resolver mapping — keeping
+  all three files in sync is required.
 
 ---
 
