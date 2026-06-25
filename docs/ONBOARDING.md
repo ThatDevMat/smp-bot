@@ -21,11 +21,11 @@ A few things to know before you dive in:
 
 | Tool                            | Minimum Version | Install Link                                                            |
 | ------------------------------- | --------------- | ----------------------------------------------------------------------- |
-| Node.js                         | 20.x            | [nodejs.org](https://nodejs.org/)                                       |
+| Docker Desktop                  | —               | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
+| Node.js                         | 20.x            | [nodejs.org](https://nodejs.org/) (only needed for Track B)             |
 | npm                             | 10.x            | (ships with Node.js)                                                    |
 | Git                             | Any recent      | [git-scm.com](https://git-scm.com/)                                     |
 | Discord Application + Bot Token | —               | [Discord Developer Portal](https://discord.com/developers/applications) |
-| MySQL client (optional)         | 8.x             | [dev.mysql.com/downloads/](https://dev.mysql.com/downloads/)            |
 | PM2 (production only)           | 5.x             | `npm install -g pm2`                                                    |
 
 You also need **access to a Minecraft server** if you want to test the
@@ -52,7 +52,96 @@ for which features need what.
 
 ## Local Setup
 
-### 1. Clone and install dependencies
+Choose one of two tracks. **Track A (Docker)** is recommended for new
+developers — it sets up everything automatically. **Track B (Manual)** is
+for developers who prefer to run dependencies directly on their machine or
+need fine-grained control.
+
+---
+
+### Track A: Docker (Recommended)
+
+#### 1. Install Docker Desktop
+
+Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+for your operating system. On Windows, make sure WSL 2 backend is enabled.
+
+#### 2. Clone and configure
+
+```bash
+git clone https://github.com/ThatDevMat/smp-bot.git
+cd smp-bot
+cp .env.example .env
+```
+
+Open `.env` in your editor. **You only need to fill in**:
+
+- `BOT_TOKEN` — Your Discord bot's secret token
+- `CLIENT_ID` — Your Discord application's client ID
+- `GUILD_ID` — Your Discord server's ID
+- `CHANNEL_MINECRAFT_CHAT`, `CHANNEL_SERVER_LOG`, `CHANNEL_SERVER_STATUS`,
+  `CHANNEL_EVENTS`, `CHANNEL_POLLS` — Channel IDs after you create the
+  channels in your server
+- `STAFF_ROLE_IDS` — Comma-separated Discord role IDs with staff access
+- `WEBHOOK_SECRET` — A shared secret for DiscordSRV webhook auth
+- `MYSQL_ROOT_PASSWORD` — Set a password for the Docker MySQL root user
+  (e.g. `rootpassword123`)
+- `MYSQL_PASSWORD` — Set a password for the `advancedbans` MySQL user
+  (e.g. `banana123`)
+- `MYSQL_HOST` — Leave as `mysql` (the Docker Compose service name)
+
+Everything else has sensible defaults for local development.
+
+#### 3. Start the environment
+
+```bash
+docker compose up --build
+```
+
+This starts three containers:
+
+| Container       | What it does                                                     | Access                   |
+| --------------- | ---------------------------------------------------------------- | ------------------------ |
+| **bot**         | The Discord bot itself (hot-reload enabled — restarts on changes) | —                        |
+| **mysql**       | MySQL 8.0 pre-loaded with AdvancedBans tables and seed data       | `localhost:3306`         |
+| **mock-srvchat**| Web UI for firing simulated DiscordSRV events at the bot          | `http://localhost:4000`  |
+
+Wait for the logs to show `Bot logged in` before proceeding.
+
+#### 4. Register slash commands (in a separate terminal)
+
+```bash
+node deploy-commands.js
+```
+
+This registers all slash commands with Discord. You only need to do this once.
+
+#### 5. Verify it's working
+
+In your Discord server, type `/status`. You should see a server status embed
+(it will show "offline" since there is no real Minecraft server — that's normal).
+
+Open [http://localhost:4000](http://localhost:4000) to access the mock
+DiscordSRV control panel. Click **💬 Chat** to simulate a chat message.
+The bot should relay it to your configured `CHANNEL_MINECRAFT_CHAT`.
+
+Run `/checkbans Steve` (as a staff member) — the bot will query the Docker
+MySQL container's seed data and return active punishments without needing
+a real AdvancedBans installation.
+
+#### Container network
+
+All three containers communicate over a Docker bridge network called `botnet`.
+The bot reaches MySQL at hostname `mysql` (port 3306) and the mock-srvchat
+service contacts the bot at `http://bot:3000/srvchat`. These hostnames are
+resolved by Docker's internal DNS — no port mapping to the host is required
+for inter-container communication.
+
+---
+
+### Track B: Manual Setup
+
+#### 1. Clone and install dependencies
 
 ```bash
 git clone https://github.com/ThatDevMat/smp-bot.git
@@ -60,7 +149,7 @@ cd smp-bot
 npm install
 ```
 
-### 2. Configure environment variables
+#### 2. Configure environment variables
 
 ```bash
 cp .env.example .env

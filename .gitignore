@@ -8,3 +8,4 @@ npm-debug.log*
 coverage/
 logs/
 backups/
+docker-compose.override.yml

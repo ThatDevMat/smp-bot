@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  bot:
+    build:
+      context: .
+      target: production
+    env_file: .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - botnet
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -u
+        - "${MYSQL_USER}"
+        - "-p${MYSQL_PASSWORD}"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    ports:
+      - "3306:3306"
+    networks:
+      - botnet
+
+volumes:
+  mysql_data:
+
+networks:
+  botnet:
+    driver: bridge

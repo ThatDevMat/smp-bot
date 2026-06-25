@@ -37,6 +37,10 @@ better-sqlite3, mysql2, and rcon-client.
 | `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                                                  |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                                        |
 | `.github/ISSUE_TEMPLATE/`          | Bug report and feature request templates                                                     |
+| `docker/`                          | Docker Compose setup: MySQL init script, mock DiscordSRV webhook service                      |
+| `Dockerfile`                       | Multi-stage Dockerfile (deps, dev, production)                                                |
+| `docker-compose.yml`               | Production Compose file (bot + MySQL with healthcheck)                                        |
+| `.dockerignore`                    | Excludes node_modules, .env, coverage, logs, backups from Docker build                        |
 | `docs/`                            | Onboarding, architecture, contributing, integrations, troubleshooting, restore guide         |
 | `backups/`                         | Automated SQLite backup files (gitignored — managed by the backup scheduler)                 |
 | `jest.config.js`                   | Jest config with 80% coverage threshold                                                      |
@@ -484,6 +488,9 @@ instruction in the current task:
 - Add a second logger instance — always import `src/utils/logger.js`
 - Delete or modify files in `backups/` — these are managed automatically by
   the backup scheduler
+- **Modify `docker/mysql/init.sql`**'s table structure — it must match the
+  real AdvancedBans schema. If AdvancedBans updates its schema, update both
+  `init.sql` and `src/integrations/advancedbans.js` together.
 
 ---
 

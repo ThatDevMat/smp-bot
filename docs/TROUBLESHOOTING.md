@@ -328,6 +328,71 @@ high, or pruning failed silently (e.g. the bot lost write permission to the
 
 ---
 
+**Problem:** `docker compose up` fails with "port already in use"
+
+**Likely cause:** MySQL (port 3306) or the webhook port is already bound on
+your machine by another service (including a previously running Docker
+container or a local MySQL installation).
+
+**Fix:**
+1. Stop the conflicting service or container:
+   ```bash
+   docker compose down
+   # OR stop your local MySQL service
+   ```
+2. If you need to keep the other service running, change the host port
+   mapping in `docker-compose.override.yml`:
+   ```yaml
+   services:
+     mysql:
+       ports:
+         - "3307:3306"   # host port 3307 → container port 3306
+   ```
+
+---
+
+**Problem:** Bot container exits immediately with "connection refused" to MySQL
+
+**Likely cause:** The bot started before MySQL was ready to accept connections.
+This should not happen with the healthcheck configured, but may occur if
+the `start_period` is too short or MySQL initialization fails.
+
+**Fix:**
+1. Check MySQL logs:
+   ```bash
+   docker compose logs mysql
+   ```
+2. Look for errors in the init script — if `init.sql` has a syntax error,
+   MySQL will fail to start.
+3. If MySQL is healthy but the bot still exits, restart the bot container:
+   ```bash
+   docker compose restart bot
+   ```
+
+---
+
+**Problem:** Source changes are not picked up by the running bot container
+
+**Likely cause:** The `src/` volume mount is not active — the container may
+be using the production build target instead of the dev target.
+
+**Fix:**
+1. Verify the override file is present:
+   ```bash
+   ls docker-compose.override.yml
+   ```
+2. Confirm the bot container is using the "dev" build target:
+   ```bash
+   docker compose ps
+   # Look for "dev" in the Image column for the bot service
+   ```
+3. If using the production target, restart with overrides:
+   ```bash
+   docker compose up --build
+   ```
+
+---
+
 ## Still Stuck?
 
 If none of the above solves your problem:

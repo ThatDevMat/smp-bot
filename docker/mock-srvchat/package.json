@@ -1,0 +1,13 @@
+{
+  "name": "mock-srvchat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mock DiscordSRV webhook sender for local dev — fires simulated payloads at the bot",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "node-fetch": "^2.7.0"
+  }
+}
