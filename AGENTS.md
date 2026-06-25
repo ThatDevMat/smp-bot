@@ -483,7 +483,70 @@ the code and flag it in the PR description. Do not silently guess.
 
 ---
 
-## 13. Out of Scope
+## 13. Pull Request Workflow
+
+All changes to this repository must go through a pull request workflow.
+Never push directly to `master` (or `main`). The CI/CD pipelines and
+release drafter depend on PRs to run checks, assign labels, and track
+history for release notes.
+
+### Standard workflow
+
+1. **Create a feature branch** from the latest `master`
+
+   ```bash
+   git checkout master && git pull
+   git checkout -b feat/my-feature-description
+   ```
+
+2. **Work on the branch** — commit in logical atomic steps using
+   conventional commit messages (see §11).
+
+3. **Push the branch**:
+
+   ```bash
+   git push -u origin feat/my-feature-description
+   ```
+
+4. **Create a pull request** — title must follow conventional commit
+   format so `pr-title-lint.yml` can validate it and assign the correct
+   `type:*` label. Include a description covering what, why, and any
+   testing done.
+
+5. **Let CI run** — the `ci.yml` workflow (ESLint, Prettier, Jest,
+   Docker build) must pass before merging. CodeQL runs alongside.
+   The PR labeler will auto-apply `area:*` labels based on changed
+   files, and `pr-title-lint.yml` will add the `type:*` label.
+
+6. **Merge via Squash merge** — squash your branch commits into a
+   single conventional commit message on `master`. This keeps the
+   mainline history clean and ensures the release drafter picks up
+   the PR correctly.
+
+### Exceptions
+
+Only direct-push to `master` without a PR for:
+
+- CI/CD workflow changes that need to be tested on `master` itself
+  (e.g. fixing a broken CI pipeline). Even then, prefer a PR from
+  a branch if the fix is non-trivial.
+
+### PR checklist
+
+Before creating a PR, confirm:
+
+- [ ] Tests pass locally (`npm test`)
+- [ ] Prettier formatting passes (`npx prettier --check .`)
+- [ ] ESLint reports zero errors (`npm run lint`)
+- [ ] Conventional commit title is used for the PR (not just the
+      individual commits)
+- [ ] Any new env vars have been added to `.env.example`
+- [ ] AGENTS.md is updated if the repo structure, commands, or
+      conventions changed
+
+---
+
+## 14. Out of Scope
 
 Do not do any of the following unless a human explicitly overrides the
 instruction in the current task:
@@ -518,3 +581,5 @@ The following sections of this file will need updating as the project grows:
   infrastructure is added.
 - **Section 9 (Security Checklist):** Add items when new integration types
   are introduced (e.g. a REST API client).
+- **Section 13 (Pull Request Workflow):** Update if the PR workflow or
+  checklist changes.
