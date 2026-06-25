@@ -29,29 +29,43 @@ module.exports = {
         .setName('create')
         .setDescription('Schedule a new event (staff only)')
         .addStringOption((opt) =>
-          opt.setName('name').setDescription('Event name').setRequired(true))
+          opt.setName('name').setDescription('Event name').setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('date').setDescription('Event date (YYYY-MM-DD)').setRequired(true))
+          opt
+            .setName('date')
+            .setDescription('Event date (YYYY-MM-DD)')
+            .setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('time').setDescription('Event time (HH:MM, 24h)').setRequired(true))
+          opt
+            .setName('time')
+            .setDescription('Event time (HH:MM, 24h)')
+            .setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('timezone')
+          opt
+            .setName('timezone')
             .setDescription('Timezone (e.g. UTC, America/New_York)')
-            .setRequired(true))
+            .setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('description').setDescription('Event description').setRequired(true)),
+          opt
+            .setName('description')
+            .setDescription('Event description')
+            .setRequired(true),
+        ),
     )
     .addSubcommand((sub) =>
-      sub
-        .setName('list')
-        .setDescription('Show upcoming events'),
+      sub.setName('list').setDescription('Show upcoming events'),
     )
     .addSubcommand((sub) =>
       sub
         .setName('cancel')
         .setDescription('Cancel an event (staff only)')
         .addIntegerOption((opt) =>
-          opt.setName('id').setDescription('Event ID').setRequired(true)),
+          opt.setName('id').setDescription('Event ID').setRequired(true),
+        ),
     ),
 
   async execute(interaction) {
@@ -66,10 +80,14 @@ module.exports = {
         await handleCancel(interaction);
       }
     } catch (err) {
-      console.error(`[Event/${subcommand}] Error for ${interaction.user.tag}:`, err.message);
+      console.error(
+        `[Event/${subcommand}] Error for ${interaction.user.tag}:`,
+        err.message,
+      );
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
-          content: '\u274C An error occurred while processing the event command.',
+          content:
+            '\u274C An error occurred while processing the event command.',
           ephemeral: true,
         });
       }
@@ -123,7 +141,10 @@ async function handleCreate(interaction) {
   // Post announcement in the configured events channel.
   const eventsChannel = getEventsChannel(interaction);
   if (eventsChannel) {
-    await eventsChannel.send({ embeds: [announcementEmbed], components: [rsvpButton] });
+    await eventsChannel.send({
+      embeds: [announcementEmbed],
+      components: [rsvpButton],
+    });
   }
 
   await interaction.reply({
@@ -136,7 +157,10 @@ async function handleList(interaction) {
   const events = db.getUpcomingEvents();
 
   if (events.length === 0) {
-    return interaction.reply({ content: '\u{1F4C5} No upcoming events.', ephemeral: true });
+    return interaction.reply({
+      content: '\u{1F4C5} No upcoming events.',
+      ephemeral: true,
+    });
   }
 
   const embeds = eventListEmbed(events);

@@ -21,36 +21,45 @@ module.exports = {
         .setName('add')
         .setDescription('Register a point of interest')
         .addStringOption((opt) =>
-          opt.setName('name').setDescription('POI name').setRequired(true))
+          opt.setName('name').setDescription('POI name').setRequired(true),
+        )
         .addNumberOption((opt) =>
-          opt.setName('x').setDescription('X coordinate').setRequired(true))
+          opt.setName('x').setDescription('X coordinate').setRequired(true),
+        )
         .addNumberOption((opt) =>
-          opt.setName('y').setDescription('Y coordinate').setRequired(true))
+          opt.setName('y').setDescription('Y coordinate').setRequired(true),
+        )
         .addNumberOption((opt) =>
-          opt.setName('z').setDescription('Z coordinate').setRequired(true))
+          opt.setName('z').setDescription('Z coordinate').setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('dimension')
+          opt
+            .setName('dimension')
             .setDescription('Dimension')
             .setRequired(true)
             .addChoices(
               { name: 'Overworld', value: 'overworld' },
               { name: 'Nether', value: 'nether' },
               { name: 'The End', value: 'the_end' },
-            ))
+            ),
+        )
         .addStringOption((opt) =>
-          opt.setName('description').setDescription('Description').setRequired(true)),
+          opt
+            .setName('description')
+            .setDescription('Description')
+            .setRequired(true),
+        ),
     )
     .addSubcommand((sub) =>
-      sub
-        .setName('list')
-        .setDescription('List all points of interest'),
+      sub.setName('list').setDescription('List all points of interest'),
     )
     .addSubcommand((sub) =>
       sub
         .setName('remove')
         .setDescription('Remove a POI (staff only)')
         .addStringOption((opt) =>
-          opt.setName('name').setDescription('POI name').setRequired(true)),
+          opt.setName('name').setDescription('POI name').setRequired(true),
+        ),
     ),
 
   async execute(interaction) {
@@ -65,7 +74,10 @@ module.exports = {
         await handleRemove(interaction);
       }
     } catch (err) {
-      console.error(`[POI/${subcommand}] Error for ${interaction.user.tag}:`, err.message);
+      console.error(
+        `[POI/${subcommand}] Error for ${interaction.user.tag}:`,
+        err.message,
+      );
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '\u274C An error occurred while managing POIs.',
@@ -102,7 +114,15 @@ async function handleAdd(interaction) {
     });
   }
 
-  db.addPoi({ name, x, y, z, dimension, description, createdBy: interaction.user.id });
+  db.addPoi({
+    name,
+    x,
+    y,
+    z,
+    dimension,
+    description,
+    createdBy: interaction.user.id,
+  });
 
   const embed = poiRegisteredEmbed({ name, x, y, z, dimension, description });
   await interaction.reply({ embeds: [embed] });
@@ -112,7 +132,9 @@ async function handleList(interaction) {
   const pois = db.getAllPois();
 
   if (pois.length === 0) {
-    return interaction.reply({ content: '\u{1F4CD} No points of interest registered yet.' });
+    return interaction.reply({
+      content: '\u{1F4CD} No points of interest registered yet.',
+    });
   }
 
   const totalPages = Math.ceil(pois.length / POIS_PER_PAGE);

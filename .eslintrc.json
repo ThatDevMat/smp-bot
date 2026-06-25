@@ -5,16 +5,13 @@
   },
   "extends": ["eslint:recommended"],
   "rules": {
-    "indent": ["error", 2, { "SwitchCase": 1 }],
     "quotes": ["error", "single", { "avoidEscape": true }],
     "semi": ["error", "always"],
     "comma-dangle": ["error", "always-multiline"],
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
-    "no-console": "off",
-    "no-trailing-spaces": "error",
-    "eol-last": ["error", "always"],
-    "object-curly-spacing": ["error", "always"],
-    "array-bracket-spacing": ["error", "never"],
-    "max-len": ["warn", { "code": 100, "ignoreStrings": true, "ignoreTemplateLiterals": true }]
+    "no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "no-console": "off"
   }
 }

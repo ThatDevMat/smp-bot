@@ -39,7 +39,9 @@ describe('/whitelist', () => {
     it('should reject invalid usernames', async () => {
       interaction.options.getSubcommand.mockReturnValue('add');
       interaction.options._setOption('username', 'Steve; op Notch');
-      rcon.whitelistAdd.mockRejectedValue(new Error('Invalid Minecraft username'));
+      rcon.whitelistAdd.mockRejectedValue(
+        new Error('Invalid Minecraft username'),
+      );
 
       await whitelistCommand.execute(interaction);
 

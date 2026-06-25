@@ -25,30 +25,34 @@ function getUuidByUsername(username) {
   return new Promise((resolve, reject) => {
     const url = `${MOJANG_API}/users/profiles/minecraft/${encodeURIComponent(username)}`;
 
-    https.get(url, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode === 204 || res.statusCode === 404) {
-          resolve(null);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          reject(
-            new Error(`Mojang API returned status ${res.statusCode}`),
-          );
-          return;
-        }
-        try {
-          const parsed = JSON.parse(data);
-          resolve({ uuid: parsed.id, username: parsed.name });
-        } catch (err) {
-          reject(new Error(`Failed to parse Mojang response: ${err.message}`));
-        }
+    https
+      .get(url, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode === 204 || res.statusCode === 404) {
+            resolve(null);
+            return;
+          }
+          if (res.statusCode !== 200) {
+            reject(new Error(`Mojang API returned status ${res.statusCode}`));
+            return;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            resolve({ uuid: parsed.id, username: parsed.name });
+          } catch (err) {
+            reject(
+              new Error(`Failed to parse Mojang response: ${err.message}`),
+            );
+          }
+        });
+      })
+      .on('error', (err) => {
+        reject(new Error(`Mojang API request failed: ${err.message}`));
       });
-    }).on('error', (err) => {
-      reject(new Error(`Mojang API request failed: ${err.message}`));
-    });
   });
 }
 
@@ -63,25 +67,31 @@ function getNameHistory(uuid) {
     const cleanUuid = uuid.replace(/-/g, '');
     const url = `${MOJANG_API}/user/profiles/${cleanUuid}/names`;
 
-    https.get(url, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode !== 200) {
-          reject(
-            new Error(`Mojang name-history API returned status ${res.statusCode}`),
-          );
-          return;
-        }
-        try {
-          resolve(JSON.parse(data));
-        } catch (err) {
-          reject(new Error(`Failed to parse name history: ${err.message}`));
-        }
+    https
+      .get(url, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode !== 200) {
+            reject(
+              new Error(
+                `Mojang name-history API returned status ${res.statusCode}`,
+              ),
+            );
+            return;
+          }
+          try {
+            resolve(JSON.parse(data));
+          } catch (err) {
+            reject(new Error(`Failed to parse name history: ${err.message}`));
+          }
+        });
+      })
+      .on('error', (err) => {
+        reject(new Error(`Name history request failed: ${err.message}`));
       });
-    }).on('error', (err) => {
-      reject(new Error(`Name history request failed: ${err.message}`));
-    });
   });
 }
 
@@ -96,16 +106,18 @@ function hasPaidGame(uuid) {
     const cleanUuid = uuid.replace(/-/g, '');
     const url = `${MOJANG_SESSION}/session/minecraft/hasJoined?username=${cleanUuid}`;
 
-    https.get(url, (res) => {
-      // Consume response data to free memory, even though we only
-      // care about the status code.
-      res.resume();
-      res.on('end', () => {
-        resolve(res.statusCode === 200);
+    https
+      .get(url, (res) => {
+        // Consume response data to free memory, even though we only
+        // care about the status code.
+        res.resume();
+        res.on('end', () => {
+          resolve(res.statusCode === 200);
+        });
+      })
+      .on('error', (err) => {
+        reject(new Error(`Session server request failed: ${err.message}`));
       });
-    }).on('error', (err) => {
-      reject(new Error(`Session server request failed: ${err.message}`));
-    });
   });
 }
 

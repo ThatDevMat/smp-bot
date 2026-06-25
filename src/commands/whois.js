@@ -11,11 +11,13 @@ const { whoisEmbed } = require('../utils/embeds');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('whois')
-    .setDescription('Look up a player\'s registered Minecraft account')
+    .setDescription("Look up a player's registered Minecraft account")
     .addUserOption((opt) =>
-      opt.setName('user')
+      opt
+        .setName('user')
         .setDescription('The Discord user to look up')
-        .setRequired(true)),
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
     const target = interaction.options.getUser('user');

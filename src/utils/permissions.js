@@ -10,7 +10,9 @@ function isStaff(member) {
   // Server owner is always staff
   if (member.id === member.guild.ownerId) return true;
   // Check configured staff roles
-  return member.roles.cache.some((role) => config.staffRoleIds.includes(role.id));
+  return member.roles.cache.some((role) =>
+    config.staffRoleIds.includes(role.id),
+  );
 }
 
 /**
@@ -31,7 +33,8 @@ function isAdmin(member) {
 function requireStaff(interaction) {
   if (!isStaff(interaction.member)) {
     interaction.reply({
-      content: '⛔ You do not have permission to use this command. Staff role required.',
+      content:
+        '⛔ You do not have permission to use this command. Staff role required.',
       ephemeral: true,
     });
     return false;

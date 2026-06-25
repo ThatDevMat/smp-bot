@@ -15,7 +15,9 @@ const { config } = require('../config');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('status')
-    .setDescription('Show the Minecraft server status, player count, and online players'),
+    .setDescription(
+      'Show the Minecraft server status, player count, and online players',
+    ),
 
   async execute(interaction) {
     await interaction.deferReply();
@@ -26,9 +28,11 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('\u2705 Server Online')
         .setColor(0x2ecc71)
-        .addFields(
-          { name: 'Players', value: `${rconData.count}/${rconData.max}`, inline: true },
-        );
+        .addFields({
+          name: 'Players',
+          value: `${rconData.count}/${rconData.max}`,
+          inline: true,
+        });
 
       if (rconData.players && rconData.players.length > 0) {
         embed.addFields({
@@ -43,10 +47,18 @@ module.exports = {
         const meta = await fetchStatus(config.rcon.host);
         if (meta && meta.online) {
           if (meta.version) {
-            embed.addFields({ name: 'Version', value: meta.version, inline: true });
+            embed.addFields({
+              name: 'Version',
+              value: meta.version,
+              inline: true,
+            });
           }
           if (meta.software) {
-            embed.addFields({ name: 'Software', value: meta.software, inline: true });
+            embed.addFields({
+              name: 'Software',
+              value: meta.software,
+              inline: true,
+            });
           }
           if (meta.motd) {
             embed.setDescription(`*${meta.motd.slice(0, 200)}*`);
@@ -60,15 +72,21 @@ module.exports = {
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
       // RCON failed — full fallback to public API.
-      console.warn(`[Status] RCON failed, falling back to mcsrvstat.us: ${err.message}`);
+      console.warn(
+        `[Status] RCON failed, falling back to mcsrvstat.us: ${err.message}`,
+      );
       try {
         const mcsrvData = await fetchStatus(config.rcon.host);
         const embed = statusEmbed(mcsrvData);
         await interaction.editReply({ embeds: [embed] });
       } catch (fallbackErr) {
-        console.error('[Status] Both RCON and mcsrvstat.us failed:', fallbackErr.message);
+        console.error(
+          '[Status] Both RCON and mcsrvstat.us failed:',
+          fallbackErr.message,
+        );
         await interaction.editReply({
-          content: '\u274C Could not fetch server status. Both RCON and the status API are unreachable.',
+          content:
+            '\u274C Could not fetch server status. Both RCON and the status API are unreachable.',
         });
       }
     }

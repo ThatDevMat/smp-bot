@@ -19,18 +19,22 @@ module.exports = {
         .setName('add')
         .setDescription('Add a player to the whitelist')
         .addStringOption((opt) =>
-          opt.setName('username')
+          opt
+            .setName('username')
             .setDescription('Minecraft username')
-            .setRequired(true)),
+            .setRequired(true),
+        ),
     )
     .addSubcommand((sub) =>
       sub
         .setName('remove')
         .setDescription('Remove a player from the whitelist')
         .addStringOption((opt) =>
-          opt.setName('username')
+          opt
+            .setName('username')
             .setDescription('Minecraft username')
-            .setRequired(true)),
+            .setRequired(true),
+        ),
     ),
 
   async execute(interaction) {
@@ -56,7 +60,8 @@ module.exports = {
         `[Whitelist/${subcommand}] Error for ${interaction.user.tag}: ${err.message}`,
       );
       await interaction.editReply({
-        content: '\u274C Could not modify the whitelist. Check RCON connection and try again.',
+        content:
+          '\u274C Could not modify the whitelist. Check RCON connection and try again.',
       });
     }
   },

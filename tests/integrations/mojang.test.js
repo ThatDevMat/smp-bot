@@ -16,7 +16,9 @@ function mockHttpsResponse(statusCode, body) {
     resume: jest.fn(),
     on: jest.fn((event, handler) => {
       if (event === 'data') {
-        handler(Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)));
+        handler(
+          Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)),
+        );
       }
       if (event === 'end') {
         handler();
@@ -54,7 +56,10 @@ describe('mojang.js', () => {
 
   describe('getUuidByUsername', () => {
     it('should return uuid and username on a successful lookup', async () => {
-      mockHttpsResponse(200, { id: 'abc123def456abc123def456abc12345', name: 'Steve' });
+      mockHttpsResponse(200, {
+        id: 'abc123def456abc123def456abc12345',
+        name: 'Steve',
+      });
 
       const result = await mojang.getUuidByUsername('Steve');
 
@@ -126,7 +131,9 @@ describe('mojang.js', () => {
       ];
       mockHttpsResponse(200, history);
 
-      const result = await mojang.getNameHistory('abc123def456abc123def456abc12345');
+      const result = await mojang.getNameHistory(
+        'abc123def456abc123def456abc12345',
+      );
 
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Steve');
@@ -158,7 +165,9 @@ describe('mojang.js', () => {
     it('should return true for a premium account (200 status)', async () => {
       mockHttpsResponse(200, {});
 
-      const result = await mojang.hasPaidGame('abc123def456abc123def456abc12345');
+      const result = await mojang.hasPaidGame(
+        'abc123def456abc123def456abc12345',
+      );
 
       expect(result).toBe(true);
     });
@@ -166,7 +175,9 @@ describe('mojang.js', () => {
     it('should return false for a non-premium account (non-200 status)', async () => {
       mockHttpsResponse(204, '');
 
-      const result = await mojang.hasPaidGame('abc123def456abc123def456abc12345');
+      const result = await mojang.hasPaidGame(
+        'abc123def456abc123def456abc12345',
+      );
 
       expect(result).toBe(false);
     });

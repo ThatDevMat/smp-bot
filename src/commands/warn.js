@@ -17,13 +17,17 @@ module.exports = {
     .setName('warn')
     .setDescription('Issue a warning to a player (staff only)')
     .addStringOption((opt) =>
-      opt.setName('player')
+      opt
+        .setName('player')
         .setDescription('Minecraft username or UUID')
-        .setRequired(true))
+        .setRequired(true),
+    )
     .addStringOption((opt) =>
-      opt.setName('reason')
+      opt
+        .setName('reason')
         .setDescription('Reason for the warning')
-        .setRequired(true)),
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
     if (!requireStaff(interaction)) return;
@@ -61,7 +65,9 @@ module.exports = {
       // DM the linked Discord user if registered.
       if (registration) {
         try {
-          const warnedUser = await interaction.client.users.fetch(registration.discord_id);
+          const warnedUser = await interaction.client.users.fetch(
+            registration.discord_id,
+          );
           if (warnedUser) {
             await warnedUser.send({
               embeds: [warningDmEmbed(player.username, reason)],

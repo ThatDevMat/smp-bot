@@ -10,22 +10,32 @@ const { SlashCommandBuilder } = require('discord.js');
 const { pollEmbed } = require('../utils/embeds');
 const { config } = require('../config');
 
-const NUMBER_EMOJIS = ['1\uFE0F\u20E3', '2\uFE0F\u20E3', '3\uFE0F\u20E3', '4\uFE0F\u20E3'];
+const NUMBER_EMOJIS = [
+  '1\uFE0F\u20E3',
+  '2\uFE0F\u20E3',
+  '3\uFE0F\u20E3',
+  '4\uFE0F\u20E3',
+];
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('poll')
     .setDescription('Create a poll with reaction voting')
     .addStringOption((opt) =>
-      opt.setName('question').setDescription('Poll question').setRequired(true))
+      opt.setName('question').setDescription('Poll question').setRequired(true),
+    )
     .addStringOption((opt) =>
-      opt.setName('option1').setDescription('Option 1').setRequired(true))
+      opt.setName('option1').setDescription('Option 1').setRequired(true),
+    )
     .addStringOption((opt) =>
-      opt.setName('option2').setDescription('Option 2').setRequired(true))
+      opt.setName('option2').setDescription('Option 2').setRequired(true),
+    )
     .addStringOption((opt) =>
-      opt.setName('option3').setDescription('Option 3').setRequired(false))
+      opt.setName('option3').setDescription('Option 3').setRequired(false),
+    )
     .addStringOption((opt) =>
-      opt.setName('option4').setDescription('Option 4').setRequired(false)),
+      opt.setName('option4').setDescription('Option 4').setRequired(false),
+    ),
 
   async execute(interaction) {
     const question = interaction.options.getString('question');
@@ -49,10 +59,13 @@ module.exports = {
       let pollMsg;
 
       if (config.channels.polls) {
-        const pollsChannel = interaction.guild.channels.cache.get(config.channels.polls);
+        const pollsChannel = interaction.guild.channels.cache.get(
+          config.channels.polls,
+        );
         if (!pollsChannel) {
           return interaction.reply({
-            content: '\u274C Polls channel not found. Check CHANNEL_POLLS config.',
+            content:
+              '\u274C Polls channel not found. Check CHANNEL_POLLS config.',
             ephemeral: true,
           });
         }

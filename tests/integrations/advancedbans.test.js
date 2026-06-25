@@ -34,7 +34,15 @@ describe('advancedbans.js', () => {
   describe('getActivePunishments', () => {
     it('should return active punishments for a UUID', async () => {
       const rows = [
-        { type: 'ban', reason: 'Griefing', uuid: 'abc', active: 1, start: '2026-01-01', end: null, executor: 'Admin' },
+        {
+          type: 'ban',
+          reason: 'Griefing',
+          uuid: 'abc',
+          active: 1,
+          start: '2026-01-01',
+          end: null,
+          executor: 'Admin',
+        },
       ];
       mockPool.query.mockResolvedValue([rows]);
 
@@ -128,7 +136,10 @@ describe('advancedbans.js', () => {
   describe('getAllActivePunishments', () => {
     it('should return all active punishments', async () => {
       mockPool.query.mockResolvedValue([
-        [{ type: 'ban', active: 1 }, { type: 'mute', active: 1 }],
+        [
+          { type: 'ban', active: 1 },
+          { type: 'mute', active: 1 },
+        ],
       ]);
 
       const result = await advancedbans.getAllActivePunishments();

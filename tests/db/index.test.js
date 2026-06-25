@@ -64,7 +64,12 @@ describe('db/index.js', () => {
       });
 
       expect(mockStmt.run).toHaveBeenCalledWith(
-        'Dragon Fight', 'Kill the dragon', '2026-07-01', '20:00', 'UTC', 'user123',
+        'Dragon Fight',
+        'Kill the dragon',
+        '2026-07-01',
+        '20:00',
+        'UTC',
+        'user123',
       );
       expect(id).toBe(1);
     });
@@ -142,7 +147,11 @@ describe('db/index.js', () => {
     it('should insert or replace a player registration', () => {
       db.registerPlayer('discord123', 'Steve', 'abc123');
 
-      expect(mockStmt.run).toHaveBeenCalledWith('discord123', 'Steve', 'abc123');
+      expect(mockStmt.run).toHaveBeenCalledWith(
+        'discord123',
+        'Steve',
+        'abc123',
+      );
     });
   });
 
@@ -200,7 +209,12 @@ describe('db/index.js', () => {
         issuedBy: 'admin1',
       });
 
-      expect(mockStmt.run).toHaveBeenCalledWith('abc123', 'discord123', 'Griefing', 'admin1');
+      expect(mockStmt.run).toHaveBeenCalledWith(
+        'abc123',
+        'discord123',
+        'Griefing',
+        'admin1',
+      );
     });
   });
 
@@ -233,12 +247,23 @@ describe('db/index.js', () => {
   describe('addPoi', () => {
     it('should insert a POI with all fields', () => {
       db.addPoi({
-        name: 'Spawn', x: 0, y: 64, z: 0,
-        dimension: 'overworld', description: 'Town center', createdBy: 'user1',
+        name: 'Spawn',
+        x: 0,
+        y: 64,
+        z: 0,
+        dimension: 'overworld',
+        description: 'Town center',
+        createdBy: 'user1',
       });
 
       expect(mockStmt.run).toHaveBeenCalledWith(
-        'Spawn', 0, 64, 0, 'overworld', 'Town center', 'user1',
+        'Spawn',
+        0,
+        64,
+        0,
+        'overworld',
+        'Town center',
+        'user1',
       );
     });
   });
@@ -246,7 +271,8 @@ describe('db/index.js', () => {
   describe('getAllPois', () => {
     it('should return all POIs ordered by name', () => {
       mockStmt.all.mockReturnValue([
-        { name: 'Base', x: 100 }, { name: 'Spawn', x: 0 },
+        { name: 'Base', x: 100 },
+        { name: 'Spawn', x: 0 },
       ]);
 
       const result = db.getAllPois();
@@ -296,7 +322,9 @@ describe('db/index.js', () => {
   describe('getCurrentSeason', () => {
     it('should return the most recent season', () => {
       mockStmt.get.mockReturnValue({
-        season_number: 3, start_date: '2026-06-01', seed: 'abc',
+        season_number: 3,
+        start_date: '2026-06-01',
+        seed: 'abc',
       });
 
       const result = db.getCurrentSeason();

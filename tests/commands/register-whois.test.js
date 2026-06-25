@@ -40,7 +40,9 @@ describe('/register', () => {
 
     expect(mojang.getUuidByUsername).toHaveBeenCalledWith('Steve');
     expect(db.registerPlayer).toHaveBeenCalledWith(
-      '111111', 'Steve', 'abc123def456abc123def456abc12345',
+      '111111',
+      'Steve',
+      'abc123def456abc123def456abc12345',
     );
     expect(interaction.editReply).toHaveBeenCalled();
     const embed = interaction._lastEmbeds[0];
@@ -99,7 +101,10 @@ describe('/whois', () => {
     const embed = interaction._lastEmbeds[0];
     expect(embed.data.fields).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: 'Minecraft Username', value: '`Alex`' }),
+        expect.objectContaining({
+          name: 'Minecraft Username',
+          value: '`Alex`',
+        }),
       ]),
     );
   });

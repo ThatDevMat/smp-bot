@@ -54,12 +54,16 @@ describe('/checkbans', () => {
   });
 
   it('should show active punishments for a player looked up by username', async () => {
-    interaction.options.getSubcommand
-      ? jest.fn()
-      : null;
+    interaction.options.getSubcommand ? jest.fn() : null;
     mockPlayerResolution('Steve', 'abc123');
     advancedbans.getActivePunishments.mockResolvedValue([
-      { type: 'ban', reason: 'Griefing', start: '2026-06-01T00:00:00Z', end: null, executor: 'Admin' },
+      {
+        type: 'ban',
+        reason: 'Griefing',
+        start: '2026-06-01T00:00:00Z',
+        end: null,
+        executor: 'Admin',
+      },
     ]);
 
     await checkbansCommand.execute(interaction);
@@ -102,7 +106,9 @@ describe('/checkbans', () => {
 
   it('should handle database errors gracefully', async () => {
     mockPlayerResolution('Steve', 'abc123');
-    advancedbans.getActivePunishments.mockRejectedValue(new Error('Connection lost'));
+    advancedbans.getActivePunishments.mockRejectedValue(
+      new Error('Connection lost'),
+    );
 
     await checkbansCommand.execute(interaction);
 
@@ -129,8 +135,22 @@ describe('/history', () => {
   it('should show punishment history for a player', async () => {
     mockPlayerResolution('Steve', 'abc123');
     advancedbans.getPunishmentHistory.mockResolvedValue([
-      { type: 'ban', reason: 'Hacking', start: '2026-01-01T00:00:00Z', end: null, active: false, executor: 'Admin' },
-      { type: 'mute', reason: 'Spam', start: '2026-03-01T00:00:00Z', end: null, active: true, executor: 'Mod' },
+      {
+        type: 'ban',
+        reason: 'Hacking',
+        start: '2026-01-01T00:00:00Z',
+        end: null,
+        active: false,
+        executor: 'Admin',
+      },
+      {
+        type: 'mute',
+        reason: 'Spam',
+        start: '2026-03-01T00:00:00Z',
+        end: null,
+        active: true,
+        executor: 'Mod',
+      },
     ]);
 
     await historyCommand.execute(interaction);
@@ -226,7 +246,9 @@ describe('/warn', () => {
 
   it('should handle errors gracefully', async () => {
     mockPlayerResolution('Steve', 'abc123');
-    db.getPlayerByUuid.mockImplementation(() => { throw new Error('DB error'); });
+    db.getPlayerByUuid.mockImplementation(() => {
+      throw new Error('DB error');
+    });
 
     await warnCommand.execute(interaction);
 
@@ -253,7 +275,12 @@ describe('/warnings', () => {
   it('should show local warnings for a player', async () => {
     mockPlayerResolution('Steve', 'abc123');
     db.getWarningsByUuid.mockReturnValue([
-      { id: 1, reason: 'First warning', issued_by: 'admin1', issued_at: '2026-06-01' },
+      {
+        id: 1,
+        reason: 'First warning',
+        issued_by: 'admin1',
+        issued_at: '2026-06-01',
+      },
     ]);
 
     await warningsCommand.execute(interaction);

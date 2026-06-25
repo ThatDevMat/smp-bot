@@ -40,7 +40,7 @@ function init(discordClient) {
   if (!config.webhook.secret) {
     console.warn(
       '[Webhook] WEBHOOK_SECRET is not set — anyone who knows your ' +
-      'server address can POST to /srvchat. Set it in .env to restrict access.',
+        'server address can POST to /srvchat. Set it in .env to restrict access.',
     );
   }
 
@@ -83,17 +83,11 @@ function init(discordClient) {
           break;
 
         case 'join':
-          await relayMessage(
-            'serverLog',
-            playerEventEmbed(username, 'join'),
-          );
+          await relayMessage('serverLog', playerEventEmbed(username, 'join'));
           break;
 
         case 'leave':
-          await relayMessage(
-            'serverLog',
-            playerEventEmbed(username, 'leave'),
-          );
+          await relayMessage('serverLog', playerEventEmbed(username, 'leave'));
           break;
 
         case 'death':

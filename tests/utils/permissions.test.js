@@ -14,7 +14,11 @@ jest.mock('../../src/config', () => {
   };
 });
 
-const { isStaff, isAdmin, requireStaff } = require('../../src/utils/permissions');
+const {
+  isStaff,
+  isAdmin,
+  requireStaff,
+} = require('../../src/utils/permissions');
 
 /* ------------------------------------------------------------------ */
 /*  Helpers: build a fake member with roles that support .some()       */

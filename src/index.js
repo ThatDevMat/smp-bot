@@ -159,7 +159,9 @@ async function checkEventReminders(discordClient) {
   if (!eventsChannel) return;
 
   for (const event of events) {
-    const eventDateTime = new Date(`${event.event_date}T${event.event_time}:00`);
+    const eventDateTime = new Date(
+      `${event.event_date}T${event.event_time}:00`,
+    );
 
     // Skip events that have already passed.
     if (eventDateTime <= now) continue;

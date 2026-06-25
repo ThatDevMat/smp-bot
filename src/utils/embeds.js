@@ -50,7 +50,11 @@ function statusEmbed({ online, players, version, motd, uptime, software }) {
   if (!online) return embed;
 
   embed.addFields(
-    { name: 'Players', value: players ? `${players.online}/${players.max}` : '?/?', inline: true },
+    {
+      name: 'Players',
+      value: players ? `${players.online}/${players.max}` : '?/?',
+      inline: true,
+    },
     { name: 'Version', value: version || 'Unknown', inline: true },
   );
 
@@ -62,7 +66,8 @@ function statusEmbed({ online, players, version, motd, uptime, software }) {
     });
   }
 
-  if (software) embed.addFields({ name: 'Software', value: software, inline: true });
+  if (software)
+    embed.addFields({ name: 'Software', value: software, inline: true });
 
   if (uptime) {
     embed.addFields({
@@ -108,7 +113,9 @@ function advancementEmbed(username, advancement, description) {
   const embed = new EmbedBuilder()
     .setColor(COLOR.YELLOW)
     .setTitle('\u{1F3C6} Advancement Unlocked')
-    .setDescription(`**${username}** has made the advancement **[${advancement}]**`)
+    .setDescription(
+      `**${username}** has made the advancement **[${advancement}]**`,
+    )
     .setTimestamp();
 
   if (description) {
@@ -136,7 +143,12 @@ function serverEventEmbed(eventType) {
 /* ------------------------------------------------------------------ */
 
 function pollEmbed(question, options) {
-  const numberEmojis = ['1\uFE0F\u20E3', '2\uFE0F\u20E3', '3\uFE0F\u20E3', '4\uFE0F\u20E3'];
+  const numberEmojis = [
+    '1\uFE0F\u20E3',
+    '2\uFE0F\u20E3',
+    '3\uFE0F\u20E3',
+    '4\uFE0F\u20E3',
+  ];
   const desc = options
     .map((opt, i) => `${numberEmojis[i]} \u2014 ${opt}`)
     .join('\n');
@@ -160,7 +172,11 @@ function eventAnnouncementEmbed(event) {
     .setDescription(event.description || 'No description provided.')
     .addFields(
       { name: 'Date', value: event.event_date, inline: true },
-      { name: 'Time', value: `${event.event_time} ${event.timezone}`, inline: true },
+      {
+        name: 'Time',
+        value: `${event.event_time} ${event.timezone}`,
+        inline: true,
+      },
     )
     .setTimestamp();
 }
@@ -173,7 +189,11 @@ function eventListEmbed(events) {
       .setDescription(ev.description || 'No description')
       .addFields(
         { name: 'Date', value: ev.event_date, inline: true },
-        { name: 'Time', value: `${ev.event_time} ${ev.timezone}`, inline: true },
+        {
+          name: 'Time',
+          value: `${ev.event_time} ${ev.timezone}`,
+          inline: true,
+        },
       )
       .setFooter({ text: ev.cancelled ? 'CANCELLED' : 'Upcoming' }),
   );
@@ -190,7 +210,11 @@ function poiRegisteredEmbed({ name, x, y, z, dimension, description }) {
     .addFields(
       { name: 'Name', value: name, inline: true },
       { name: 'Location', value: `\`${x}, ${y}, ${z}\``, inline: true },
-      { name: 'Dimension', value: `${DIMENSION_EMOJI[dimension] || ''} ${dimension}`, inline: true },
+      {
+        name: 'Dimension',
+        value: `${DIMENSION_EMOJI[dimension] || ''} ${dimension}`,
+        inline: true,
+      },
       { name: 'Description', value: description, inline: false },
     )
     .setTimestamp();
@@ -230,7 +254,11 @@ function seasonInfoEmbed(season, daysElapsed) {
     .setTimestamp();
 
   if (season.seed) {
-    embed.addFields({ name: 'World Seed', value: `\`${season.seed}\``, inline: false });
+    embed.addFields({
+      name: 'World Seed',
+      value: `\`${season.seed}\``,
+      inline: false,
+    });
   }
 
   return embed;
@@ -292,7 +320,11 @@ function warningIssuedEmbed(username, uuid, reason, issuerId) {
     .setColor(COLOR.YELLOW)
     .setTitle('\u26A0\uFE0F Warning Issued')
     .addFields(
-      { name: 'Player', value: `\`${username}\` (UUID: \`${uuid}\`)`, inline: false },
+      {
+        name: 'Player',
+        value: `\`${username}\` (UUID: \`${uuid}\`)`,
+        inline: false,
+      },
       { name: 'Reason', value: reason, inline: false },
       { name: 'Issued By', value: `<@${issuerId}>`, inline: true },
     )
@@ -343,7 +375,11 @@ function registrationEmbed(profile, discordId) {
     .setTitle('\u2705 Registration Successful')
     .addFields(
       { name: 'Discord User', value: `<@${discordId}>`, inline: true },
-      { name: 'Minecraft Username', value: `\`${profile.username}\``, inline: true },
+      {
+        name: 'Minecraft Username',
+        value: `\`${profile.username}\``,
+        inline: true,
+      },
       { name: 'Minecraft UUID', value: `\`${profile.uuid}\``, inline: false },
     )
     .setTimestamp();
@@ -354,9 +390,21 @@ function whoisEmbed(registration) {
     .setColor(COLOR.BLUE)
     .setTitle('Player Lookup')
     .addFields(
-      { name: 'Discord User', value: `<@${registration.discord_id}>`, inline: true },
-      { name: 'Minecraft Username', value: `\`${registration.minecraft_username}\``, inline: true },
-      { name: 'Minecraft UUID', value: `\`${registration.minecraft_uuid}\``, inline: false },
+      {
+        name: 'Discord User',
+        value: `<@${registration.discord_id}>`,
+        inline: true,
+      },
+      {
+        name: 'Minecraft Username',
+        value: `\`${registration.minecraft_username}\``,
+        inline: true,
+      },
+      {
+        name: 'Minecraft UUID',
+        value: `\`${registration.minecraft_uuid}\``,
+        inline: false,
+      },
       { name: 'Registered', value: registration.registered_at, inline: false },
     )
     .setTimestamp();

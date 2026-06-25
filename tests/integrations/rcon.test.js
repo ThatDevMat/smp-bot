@@ -116,12 +116,18 @@ describe('rcon.js', () => {
 
       const result = await rcon.getOnlinePlayers();
 
-      expect(result).toEqual({ count: 3, max: 20, players: ['Steve', 'Alex', 'Notch'] });
+      expect(result).toEqual({
+        count: 3,
+        max: 20,
+        players: ['Steve', 'Alex', 'Notch'],
+      });
     });
 
     it('should parse the alternative /list format', async () => {
       await rcon.connect();
-      mockClient.send.mockResolvedValue('There are 2 of 20 players online: Alice, Bob');
+      mockClient.send.mockResolvedValue(
+        'There are 2 of 20 players online: Alice, Bob',
+      );
 
       const result = await rcon.getOnlinePlayers();
 
@@ -130,7 +136,9 @@ describe('rcon.js', () => {
 
     it('should return empty player list when /list has no players', async () => {
       await rcon.connect();
-      mockClient.send.mockResolvedValue('There are 0 of a max of 20 players online:');
+      mockClient.send.mockResolvedValue(
+        'There are 0 of a max of 20 players online:',
+      );
 
       const result = await rcon.getOnlinePlayers();
 
@@ -205,7 +213,9 @@ describe('rcon.js', () => {
 
       await rcon.broadcast('Server restart in 10 minutes');
 
-      expect(mockClient.send).toHaveBeenCalledWith('say Server restart in 10 minutes');
+      expect(mockClient.send).toHaveBeenCalledWith(
+        'say Server restart in 10 minutes',
+      );
     });
 
     it('should truncate messages longer than 256 characters', async () => {

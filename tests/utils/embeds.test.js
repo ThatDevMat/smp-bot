@@ -73,9 +73,7 @@ describe('statusEmbed', () => {
     };
 
     const embed = statusEmbed(data);
-    const playersField = embed.data.fields.find(
-      (f) => f.name === 'Players',
-    );
+    const playersField = embed.data.fields.find((f) => f.name === 'Players');
     expect(playersField.value).toBe('0/20');
   });
 
@@ -83,9 +81,7 @@ describe('statusEmbed', () => {
     const data = { online: true };
 
     const embed = statusEmbed(data);
-    const playersField = embed.data.fields.find(
-      (f) => f.name === 'Players',
-    );
+    const playersField = embed.data.fields.find((f) => f.name === 'Players');
     expect(playersField.value).toBe('?/?');
   });
 
@@ -290,8 +286,22 @@ describe('eventAnnouncementEmbed', () => {
 describe('eventListEmbed', () => {
   it('should return one embed per event', () => {
     const events = [
-      { id: 1, name: 'A', event_date: '2026-07-01', event_time: '20:00', timezone: 'UTC', cancelled: 0 },
-      { id: 2, name: 'B', event_date: '2026-07-02', event_time: '18:00', timezone: 'EST', cancelled: 0 },
+      {
+        id: 1,
+        name: 'A',
+        event_date: '2026-07-01',
+        event_time: '20:00',
+        timezone: 'UTC',
+        cancelled: 0,
+      },
+      {
+        id: 2,
+        name: 'B',
+        event_date: '2026-07-02',
+        event_time: '18:00',
+        timezone: 'EST',
+        cancelled: 0,
+      },
     ];
 
     const embeds = eventListEmbed(events);
@@ -308,21 +318,38 @@ describe('eventListEmbed', () => {
 
 describe('POI embeds', () => {
   it('poiRegisteredEmbed should include location and dimension details', () => {
-    const poi = { name: 'Spawn', x: 0, y: 64, z: 0, dimension: 'overworld', description: 'Town center' };
+    const poi = {
+      name: 'Spawn',
+      x: 0,
+      y: 64,
+      z: 0,
+      dimension: 'overworld',
+      description: 'Town center',
+    };
     const embed = poiRegisteredEmbed(poi);
 
     expect(embed.data.title).toBe('\u{1F4CD} POI Registered');
     expect(embed.data.fields).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'Location', value: '`0, 64, 0`' }),
-        expect.objectContaining({ name: 'Dimension', value: expect.stringContaining('overworld') }),
+        expect.objectContaining({
+          name: 'Dimension',
+          value: expect.stringContaining('overworld'),
+        }),
       ]),
     );
   });
 
   it('poiListEmbed should create a paginated embed with POI fields', () => {
     const pois = [
-      { name: 'A', x: 1, y: 2, z: 3, dimension: 'nether', description: 'Portal' },
+      {
+        name: 'A',
+        x: 1,
+        y: 2,
+        z: 3,
+        dimension: 'nether',
+        description: 'Portal',
+      },
       { name: 'B', x: 4, y: 5, z: 6, dimension: 'the_end', description: null },
     ];
     const embed = poiListEmbed(pois, 1, 1);
@@ -414,7 +441,13 @@ describe('activePunishmentsEmbed', () => {
 
   it('should handle missing reason and executor', () => {
     const punishments = [
-      { type: 'warn', reason: null, start: '2026-06-01T00:00:00Z', end: null, executor: null },
+      {
+        type: 'warn',
+        reason: null,
+        start: '2026-06-01T00:00:00Z',
+        end: null,
+        executor: null,
+      },
     ];
 
     const embed = activePunishmentsEmbed('Test', punishments);
@@ -431,8 +464,22 @@ describe('activePunishmentsEmbed', () => {
 describe('punishmentHistoryEmbed', () => {
   it('should show recent entries and total count in footer', () => {
     const history = [
-      { type: 'ban', reason: 'Xray', start: '2026-06-01T00:00:00Z', end: null, active: false, executor: 'Admin' },
-      { type: 'mute', reason: 'Spam', start: '2026-06-05T00:00:00Z', end: null, active: true, executor: 'Mod' },
+      {
+        type: 'ban',
+        reason: 'Xray',
+        start: '2026-06-01T00:00:00Z',
+        end: null,
+        active: false,
+        executor: 'Admin',
+      },
+      {
+        type: 'mute',
+        reason: 'Spam',
+        start: '2026-06-05T00:00:00Z',
+        end: null,
+        active: true,
+        executor: 'Mod',
+      },
     ];
 
     const embed = punishmentHistoryEmbed('Steve', history);
@@ -445,7 +492,12 @@ describe('punishmentHistoryEmbed', () => {
 
   it('should add a "showing N of M" note when there are more than 10 entries', () => {
     const history = Array.from({ length: 15 }, (_, i) => ({
-      type: 'ban', reason: 'Test', start: '2026-06-01T00:00:00Z', end: null, active: false, executor: 'Admin',
+      type: 'ban',
+      reason: 'Test',
+      start: '2026-06-01T00:00:00Z',
+      end: null,
+      active: false,
+      executor: 'Admin',
     }));
 
     const embed = punishmentHistoryEmbed('Steve', history);
@@ -478,7 +530,10 @@ describe('Warning embeds', () => {
     expect(embed.data.title).toContain('You Have Been Warned');
     expect(embed.data.fields).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: 'Minecraft Account', value: '`Steve`' }),
+        expect.objectContaining({
+          name: 'Minecraft Account',
+          value: '`Steve`',
+        }),
         expect.objectContaining({ name: 'Reason', value: 'Griefing' }),
       ]),
     );
@@ -500,7 +555,10 @@ describe('Warning embeds', () => {
 
   it('localWarningsEmbed should cap at 10 entries and show overflow note', () => {
     const warnings = Array.from({ length: 12 }, (_, i) => ({
-      id: i, reason: `W${i}`, issued_by: 'admin', issued_at: '2026-06-01',
+      id: i,
+      reason: `W${i}`,
+      issued_by: 'admin',
+      issued_at: '2026-06-01',
     }));
 
     const embed = localWarningsEmbed('Steve', warnings);
@@ -543,7 +601,10 @@ describe('Player registry embeds', () => {
     expect(embed.data.title).toBe('Player Lookup');
     expect(embed.data.fields).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: 'Minecraft Username', value: '`Steve`' }),
+        expect.objectContaining({
+          name: 'Minecraft Username',
+          value: '`Steve`',
+        }),
         expect.objectContaining({ name: 'Registered', value: '2026-06-01' }),
       ]),
     );

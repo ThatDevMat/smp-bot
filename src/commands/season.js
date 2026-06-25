@@ -18,22 +18,27 @@ module.exports = {
     .setName('season')
     .setDescription('View or set SMP season info')
     .addSubcommand((sub) =>
-      sub
-        .setName('info')
-        .setDescription('Show current season information'),
+      sub.setName('info').setDescription('Show current season information'),
     )
     .addSubcommand((sub) =>
       sub
         .setName('set')
         .setDescription('Set or update season info (staff only)')
         .addIntegerOption((opt) =>
-          opt.setName('number').setDescription('Season number').setRequired(true))
+          opt
+            .setName('number')
+            .setDescription('Season number')
+            .setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('start_date')
+          opt
+            .setName('start_date')
             .setDescription('Season start date (YYYY-MM-DD)')
-            .setRequired(true))
+            .setRequired(true),
+        )
         .addStringOption((opt) =>
-          opt.setName('seed').setDescription('World seed').setRequired(false)),
+          opt.setName('seed').setDescription('World seed').setRequired(false),
+        ),
     ),
 
   async execute(interaction) {
@@ -46,7 +51,10 @@ module.exports = {
         await handleSet(interaction);
       }
     } catch (err) {
-      console.error(`[Season/${subcommand}] Error for ${interaction.user.tag}:`, err.message);
+      console.error(
+        `[Season/${subcommand}] Error for ${interaction.user.tag}:`,
+        err.message,
+      );
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '\u274C An error occurred while managing season data.',
@@ -64,7 +72,8 @@ async function handleInfo(interaction) {
 
   if (!season) {
     return interaction.reply({
-      content: 'No season data set yet. Use `/season set` to configure the current season.',
+      content:
+        'No season data set yet. Use `/season set` to configure the current season.',
       ephemeral: true,
     });
   }

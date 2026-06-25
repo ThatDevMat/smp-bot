@@ -16,9 +16,11 @@ module.exports = {
     .setName('register')
     .setDescription('Link your Discord account to your Minecraft username')
     .addStringOption((opt) =>
-      opt.setName('minecraft_username')
+      opt
+        .setName('minecraft_username')
         .setDescription('Your Minecraft username')
-        .setRequired(true)),
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
@@ -41,7 +43,10 @@ module.exports = {
       const embed = registrationEmbed(profile, interaction.user.id);
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
-      console.error(`[Register] Mojang API error for ${username}:`, err.message);
+      console.error(
+        `[Register] Mojang API error for ${username}:`,
+        err.message,
+      );
       await interaction.editReply({
         content:
           '\u274C Could not verify your Minecraft username right now. ' +

@@ -27,7 +27,9 @@ describe('/event', () => {
     permissions.requireStaff.mockReturnValue(true);
 
     // Configure events channel in the channel cache
-    interaction.guild.channels.cache.set('100004', { send: jest.fn().mockResolvedValue(undefined) });
+    interaction.guild.channels.cache.set('100004', {
+      send: jest.fn().mockResolvedValue(undefined),
+    });
   });
 
   /* ------------------------------------------------------------------ */
@@ -121,7 +123,15 @@ describe('/event', () => {
     it('should list upcoming events', async () => {
       interaction.options.getSubcommand.mockReturnValue('list');
       db.getUpcomingEvents.mockReturnValue([
-        { id: 1, name: 'Event A', description: 'Desc', event_date: '2026-07-01', event_time: '20:00', timezone: 'UTC', cancelled: 0 },
+        {
+          id: 1,
+          name: 'Event A',
+          description: 'Desc',
+          event_date: '2026-07-01',
+          event_time: '20:00',
+          timezone: 'UTC',
+          cancelled: 0,
+        },
       ]);
 
       await eventCommand.execute(interaction);

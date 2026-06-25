@@ -15,9 +15,11 @@ module.exports = {
     .setName('warnings')
     .setDescription('View warning history for a player (staff only)')
     .addStringOption((opt) =>
-      opt.setName('player')
+      opt
+        .setName('player')
         .setDescription('Minecraft username or UUID')
-        .setRequired(true)),
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
     if (!requireStaff(interaction)) return;

@@ -30,7 +30,9 @@ beforeAll(() => {
   // Prevent init() from binding to a real port — supertest uses its
   // own ephemeral server via the Express app directly.
   const express = require('express');
-  jest.spyOn(express.application, 'listen').mockReturnValue({ close: jest.fn() });
+  jest
+    .spyOn(express.application, 'listen')
+    .mockReturnValue({ close: jest.fn() });
 });
 
 afterAll(() => {
@@ -238,7 +240,11 @@ describe('POST /srvchat — edge cases', () => {
     const res = await request(getApp())
       .post('/srvchat')
       .set('x-webhook-secret', 'test-webhook-secret')
-      .send({ type: 'custom_event', username: 'Server', message: 'Something happened' });
+      .send({
+        type: 'custom_event',
+        username: 'Server',
+        message: 'Something happened',
+      });
 
     expect(res.status).toBe(200);
     expect(client._channelSend).toHaveBeenCalled();

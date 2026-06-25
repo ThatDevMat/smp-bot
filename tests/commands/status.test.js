@@ -24,8 +24,17 @@ describe('/status', () => {
   });
 
   it('should show online status with player counts and version when RCON succeeds', async () => {
-    rcon.getOnlinePlayers.mockResolvedValue({ count: 3, max: 20, players: ['Steve', 'Alex'] });
-    mcsrvstat.fetchStatus.mockResolvedValue({ online: true, version: '1.21', software: 'Paper', motd: 'Welcome' });
+    rcon.getOnlinePlayers.mockResolvedValue({
+      count: 3,
+      max: 20,
+      players: ['Steve', 'Alex'],
+    });
+    mcsrvstat.fetchStatus.mockResolvedValue({
+      online: true,
+      version: '1.21',
+      software: 'Paper',
+      motd: 'Welcome',
+    });
 
     await statusCommand.execute(interaction);
 
@@ -68,13 +77,19 @@ describe('/status', () => {
   });
 
   it('should show player list when players are online', async () => {
-    rcon.getOnlinePlayers.mockResolvedValue({ count: 2, max: 20, players: ['Steve', 'Alex'] });
+    rcon.getOnlinePlayers.mockResolvedValue({
+      count: 2,
+      max: 20,
+      players: ['Steve', 'Alex'],
+    });
     mcsrvstat.fetchStatus.mockResolvedValue({ online: true });
 
     await statusCommand.execute(interaction);
 
     const embed = interaction._lastEmbeds[0];
-    const playersField = embed.data.fields.find((f) => f.name === 'Online Players');
+    const playersField = embed.data.fields.find(
+      (f) => f.name === 'Online Players',
+    );
     expect(playersField).toBeDefined();
     expect(playersField.value).toContain('Steve');
   });

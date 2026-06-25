@@ -43,7 +43,9 @@ describe('/poi', () => {
 
       expect(db.addPoi).toHaveBeenCalledWith({
         name: 'Spawn Village',
-        x: 0, y: 64, z: 0,
+        x: 0,
+        y: 64,
+        z: 0,
         dimension: 'overworld',
         description: 'Town center',
         createdBy: '111111',
@@ -86,7 +88,14 @@ describe('/poi', () => {
     it('should list all POIs', async () => {
       interaction.options.getSubcommand.mockReturnValue('list');
       db.getAllPois.mockReturnValue([
-        { name: 'Spawn', x: 0, y: 64, z: 0, dimension: 'overworld', description: 'Town' },
+        {
+          name: 'Spawn',
+          x: 0,
+          y: 64,
+          z: 0,
+          dimension: 'overworld',
+          description: 'Town',
+        },
       ]);
 
       await poiCommand.execute(interaction);
@@ -240,7 +249,9 @@ describe('/poll', () => {
     // Add the polls channel to the guild's channel cache so the bot
     // finds it and posts there instead of replying inline.
     interaction.guild.channels.cache.set('100005', {
-      send: jest.fn().mockResolvedValue({ react: jest.fn().mockResolvedValue(undefined) }),
+      send: jest
+        .fn()
+        .mockResolvedValue({ react: jest.fn().mockResolvedValue(undefined) }),
     });
   });
 

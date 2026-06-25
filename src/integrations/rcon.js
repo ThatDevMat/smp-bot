@@ -27,7 +27,9 @@ const MC_USERNAME_RE = /^[a-zA-Z0-9_]{1,16}$/;
 
 async function connect() {
   if (!config.rcon.password) {
-    console.warn('[RCON] No password configured \u2014 RCON commands will be unavailable.');
+    console.warn(
+      '[RCON] No password configured \u2014 RCON commands will be unavailable.',
+    );
     return null;
   }
   try {
@@ -39,7 +41,9 @@ async function connect() {
     console.log('[RCON] Connected successfully.');
     return rconClient;
   } catch (err) {
-    console.warn(`[RCON] Connection failed: ${err.message}. RCON commands will be unavailable.`);
+    console.warn(
+      `[RCON] Connection failed: ${err.message}. RCON commands will be unavailable.`,
+    );
     return null;
   }
 }
@@ -87,7 +91,10 @@ async function getOnlinePlayers() {
         count: parseInt(match[1], 10),
         max: parseInt(match[2], 10),
         players: match[3]
-          ? match[3].split(',').map((p) => p.trim()).filter(Boolean)
+          ? match[3]
+              .split(',')
+              .map((p) => p.trim())
+              .filter(Boolean)
           : [],
       };
     }

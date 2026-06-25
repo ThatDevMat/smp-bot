@@ -1,0 +1,94 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_branch == 'main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          script: |
+            set -e
+            cd ~/smp-bot
+            git pull origin main
+            npm ci --omit=dev
+            pm2 restart minecraft-bot
+            pm2 save
+            echo "Waiting up to 15 seconds for health check..."
+            for i in $(seq 1 15); do
+              if pm2 show minecraft-bot 2>/dev/null | grep -q 'status.*online'; then
+                echo "✅ Health check passed ($i seconds)"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "❌ Health check failed — pm2 status is not 'online' after 15 seconds"
+            exit 1
+
+      - name: Notify deploy failure
+        if: failure()
+        shell: bash
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -sf -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🚨 Deployment Failed",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "Commit",
+                  "value": "${COMMIT_SHA}",
+                  "inline": true
+                },
+                {
+                  "name": "Workflow Run",
+                  "value": "[View Run](${RUN_URL})",
+                  "inline": true
+                }
+              ],
+              "footer": {
+                "text": "smp-bot deploy pipeline"
+              },
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }]
+          }
+          EOF
+          )"

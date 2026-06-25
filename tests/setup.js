@@ -88,7 +88,9 @@ function createMockInteraction(opts = {}) {
       getNumber: jest.fn((name) => optionsMap[name]),
       getUser: jest.fn((name) => optionsMap[name]),
       getBoolean: jest.fn((name) => optionsMap[name]),
-      _setOption(name, value) { optionsMap[name] = value; },
+      _setOption(name, value) {
+        optionsMap[name] = value;
+      },
     },
     // Permissions mock: the member has staff roles when isStaff === true.
     member: {

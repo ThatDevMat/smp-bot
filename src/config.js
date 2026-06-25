@@ -45,9 +45,7 @@ const config = {
     polls: process.env.CHANNEL_POLLS,
   },
 
-  staffRoleIds: (process.env.STAFF_ROLE_IDS || '')
-    .split(',')
-    .filter(Boolean),
+  staffRoleIds: (process.env.STAFF_ROLE_IDS || '').split(',').filter(Boolean),
 };
 
 function validateConfig() {
@@ -57,9 +55,7 @@ function validateConfig() {
     ['GUILD_ID', config.bot.guildId],
   ];
 
-  const missing = required
-    .filter(([, val]) => !val)
-    .map(([key]) => key);
+  const missing = required.filter(([, val]) => !val).map(([key]) => key);
 
   if (missing.length > 0) {
     console.error(

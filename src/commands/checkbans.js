@@ -16,9 +16,11 @@ module.exports = {
     .setName('checkbans')
     .setDescription('Check active punishments for a player (staff only)')
     .addStringOption((opt) =>
-      opt.setName('player')
+      opt
+        .setName('player')
         .setDescription('Minecraft username or UUID')
-        .setRequired(true)),
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
     if (!requireStaff(interaction)) return;
@@ -49,7 +51,8 @@ module.exports = {
         `[Checkbans] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
       );
       await interaction.editReply({
-        content: '\u274C Could not query the punishment database. Is the AdvancedBans MySQL server reachable?',
+        content:
+          '\u274C Could not query the punishment database. Is the AdvancedBans MySQL server reachable?',
       });
     }
   },

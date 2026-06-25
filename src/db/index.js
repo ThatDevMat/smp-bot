@@ -87,19 +87,33 @@ function initSchema() {
 
 // ---- Events ------------------------------------------------------------
 
-function createEvent({ name, description, event_date, event_time, timezone, created_by }) {
+function createEvent({
+  name,
+  description,
+  event_date,
+  event_time,
+  timezone,
+  created_by,
+}) {
   const stmt = getDb().prepare(`
     INSERT INTO events (name, description, event_date, event_time, timezone, created_by)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
-  const result = stmt.run(name, description, event_date, event_time, timezone, created_by);
+  const result = stmt.run(
+    name,
+    description,
+    event_date,
+    event_time,
+    timezone,
+    created_by,
+  );
   return result.lastInsertRowid;
 }
 
 function getUpcomingEvents() {
   return getDb()
     .prepare(
-      'SELECT * FROM events WHERE cancelled = 0 AND event_date >= date(\'now\') ORDER BY event_date ASC, event_time ASC',
+      "SELECT * FROM events WHERE cancelled = 0 AND event_date >= date('now') ORDER BY event_date ASC, event_time ASC",
     )
     .all();
 }
@@ -109,7 +123,9 @@ function getEventById(id) {
 }
 
 function cancelEvent(id) {
-  return getDb().prepare('UPDATE events SET cancelled = 1 WHERE id = ?').run(id);
+  return getDb()
+    .prepare('UPDATE events SET cancelled = 1 WHERE id = ?')
+    .run(id);
 }
 
 function addRsvp(eventId, discordId) {
@@ -136,28 +152,38 @@ function registerPlayer(discordId, minecraftUsername, minecraftUuid) {
 }
 
 function getPlayerByDiscord(discordId) {
-  return getDb().prepare('SELECT * FROM player_registry WHERE discord_id = ?').get(discordId);
+  return getDb()
+    .prepare('SELECT * FROM player_registry WHERE discord_id = ?')
+    .get(discordId);
 }
 
 function getPlayerByUsername(username) {
-  return getDb().prepare('SELECT * FROM player_registry WHERE minecraft_username = ?').get(username);
+  return getDb()
+    .prepare('SELECT * FROM player_registry WHERE minecraft_username = ?')
+    .get(username);
 }
 
 function getPlayerByUuid(uuid) {
-  return getDb().prepare('SELECT * FROM player_registry WHERE minecraft_uuid = ?').get(uuid);
+  return getDb()
+    .prepare('SELECT * FROM player_registry WHERE minecraft_uuid = ?')
+    .get(uuid);
 }
 
 // ---- Warnings (local) --------------------------------------------------
 
 function addWarning({ playerUuid, discordId, reason, issuedBy }) {
   return getDb()
-    .prepare('INSERT INTO warnings (player_uuid, discord_id, reason, issued_by) VALUES (?, ?, ?, ?)')
+    .prepare(
+      'INSERT INTO warnings (player_uuid, discord_id, reason, issued_by) VALUES (?, ?, ?, ?)',
+    )
     .run(playerUuid, discordId, reason, issuedBy);
 }
 
 function getWarningsByUuid(playerUuid) {
   return getDb()
-    .prepare('SELECT * FROM warnings WHERE player_uuid = ? ORDER BY issued_at DESC')
+    .prepare(
+      'SELECT * FROM warnings WHERE player_uuid = ? ORDER BY issued_at DESC',
+    )
     .all(playerUuid);
 }
 
@@ -196,7 +222,9 @@ function setSeason({ seasonNumber, startDate, seed }) {
     .prepare('DELETE FROM seasons WHERE season_number = ?')
     .run(seasonNumber);
   return getDb()
-    .prepare('INSERT INTO seasons (season_number, start_date, seed) VALUES (?, ?, ?)')
+    .prepare(
+      'INSERT INTO seasons (season_number, start_date, seed) VALUES (?, ?, ?)',
+    )
     .run(seasonNumber, startDate, seed);
 }
 
