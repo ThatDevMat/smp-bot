@@ -1,0 +1,42 @@
+# Dependabot configuration for automated dependency updates.
+#
+# Major version bumps (e.g. discord.js v14 → v15) are intentionally
+# excluded from automatic PRs because they often contain breaking
+# API changes — for example, interaction handling, embed construction,
+# or Gateway intent signatures — that require human review, changelog
+# reading, and local testing before merging. Minor and patch updates
+# are safe to accept automatically after CI passes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '03:00'
+      timezone: UTC
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
+    reviewers: []
+    assignees: []
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '03:00'
+      timezone: UTC
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci

@@ -21,16 +21,17 @@ better-sqlite3, mysql2, and rcon-client.
 
 | Path                               | Purpose                                                                                      |
 | ---------------------------------- | -------------------------------------------------------------------------------------------- |
-| `src/commands/`                    | 12 slash command handlers, one file per command                                              |
+| `src/commands/`                    | 13 slash command handlers, one file per command                                              |
 | `src/events/`                      | discord.js lifecycle event handlers (ready.js, interactionCreate.js)                         |
 | `src/webhooks/`                    | Express router for the DiscordSRV webhook receiver                                           |
 | `src/db/`                          | SQLite schema initialisation and all query helpers                                           |
 | `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                              |
-| `src/utils/`                       | Embed builders, permission checks, player UUID resolution, logger, backup, shutdown handlers |
+| `src/utils/`                       | Embed builders, permission checks, player UUID resolution, logger, backup, cache, shutdown handlers |
 | `src/config.js`                    | dotenv config loader with `validateConfig()`                                                 |
 | `src/index.js`                     | Entry point — boot sequence, never excluded from lint                                        |
 | `tests/`                           | Jest test files mirroring `src/` structure                                                   |
 | `tests/setup.js`                   | Shared test factories and mocks                                                              |
+| `.github/dependabot.yml`           | Dependabot config for npm and GitHub Actions dependency updates                              |
 | `.github/workflows/ci.yml`         | CI pipeline (lint → test + security audit)                                                   |
 | `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                                                  |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                                        |
@@ -89,6 +90,13 @@ These boundaries must never be violated:
   _Violation:_ constructing `new EmbedBuilder()` directly inside a command.
   Every embed shape has a dedicated builder function — use it.
 
+- **Never call node-cache directly — always use the typed helpers in
+  `src/utils/cache.js`.**
+  _Violation:_ calling `cache.get()` or `cache.set()` outside of
+  `src/utils/cache.js`.  Use `getCachedUUID`, `setCachedUUID`,
+  `invalidateUUIDCache`, `getCachedServerStatus`, or `setCachedServerStatus`
+  instead.
+
 ---
 
 ## 4. Commands Reference
@@ -96,6 +104,7 @@ These boundaries must never be violated:
 | Command      | File                        | Staff Only                   | Description                                                          | Dependencies                                   |
 | ------------ | --------------------------- | ---------------------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
 | `/backup`    | `src/commands/backup.js`    | Yes                          | Triggers an immediate SQLite database backup                         | SQLite (backup API), filesystem                |
+| `/cache`     | `src/commands/cache.js`     | Flush: Yes; Stats: No        | View cache statistics or flush the in-memory API cache               | node-cache                                     |
 | `/status`    | `src/commands/status.js`    | No                           | Shows server online status, player count, list of online players     | RCON (primary), mcsrvstat.us (fallback)        |
 | `/event`     | `src/commands/event.js`     | Create/Cancel: Yes; List: No | Create, list, and cancel scheduled events with RSVP                  | SQLite (`events`, `rsvps`)                     |
 | `/register`  | `src/commands/register.js`  | No                           | Links a Discord user to a Minecraft username/UUID                    | Mojang API, SQLite (`player_registry`)         |

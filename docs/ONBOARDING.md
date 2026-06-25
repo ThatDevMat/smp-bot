@@ -154,7 +154,16 @@ running it, you should see the commands in your Discord server within a few
 seconds. Registered commands:
 
 `/status`, `/event`, `/register`, `/whois`, `/whitelist`, `/checkbans`,
-`/history`, `/warn`, `/warnings`, `/poi`, `/season`, `/poll`
+`/history`, `/warn`, `/warnings`, `/poi`, `/season`, `/poll`, `/cache`
+
+### Branch Protection and Dependabot
+
+This repository uses Dependabot to automate dependency updates.
+Dependabot PRs appear on Monday mornings. They can be merged if all CI
+checks pass. Never merge a Dependabot major version bump without
+reviewing the package changelog and testing the change locally first
+(major bumps often contain breaking API changes — see `.github/dependabot.yml`
+for details on which updates are blocked).
 
 ### 5. Start the bot
 

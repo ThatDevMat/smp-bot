@@ -121,16 +121,20 @@ blocking the connection.
 **Problem:** Mojang API returns 429 (rate limited)
 
 **Likely cause:** Too many requests in a short window. The limit is roughly
-600 requests per 10 minutes per IP.
+600 requests per 10 minutes per IP. The bot now caches UUID lookups for
+1 hour, so repeated lookups for the same username will not hit the API.
 
 **Fix:**
 
-1. Wait 10 minutes. The bot will retry on the next command invocation —
-   there is no retry-with-backoff in the current implementation.
-2. If this happens frequently, consider caching UUID lookups for a period
-   (the bot already stores registrations, but unregistered player lookups
-   in moderation commands hit the API every time). This is a good candidate
-   for a feature contribution.
+1. Wait 10 minutes. The bot will retry on the next command invocation.
+2. Use `/cache stats` to check how many UUID entries are currently cached
+   and how many API calls have been saved (hits vs misses).
+3. If the cache is empty (e.g. after a restart), the first few lookups
+   after restart will hit the API. This is normal.
+4. For `/register` specifically: if a user gets a rate-limit error, wait
+   a few minutes and try again. The 1-hour cache means subsequent
+   `/whois` or moderation lookups for the same username will be served
+   from cache without hitting the API.
 
 ---
 

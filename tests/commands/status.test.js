@@ -93,4 +93,39 @@ describe('/status', () => {
     expect(playersField).toBeDefined();
     expect(playersField.value).toContain('Steve');
   });
+
+  it('should add stale warning footer when supplement returns stale data', async () => {
+    rcon.getOnlinePlayers.mockResolvedValue({
+      count: 3,
+      max: 20,
+      players: ['Steve'],
+    });
+    mcsrvstat.fetchStatus.mockResolvedValue({
+      online: true,
+      version: '1.21',
+      stale: true,
+    });
+
+    await statusCommand.execute(interaction);
+
+    const embed = interaction._lastEmbeds[0];
+    expect(embed.data.footer.text).toContain('outdated');
+    expect(embed.data.footer.text).toContain('API unreachable');
+  });
+
+  it('should add stale warning footer in fallback path when stale data returned', async () => {
+    rcon.getOnlinePlayers.mockRejectedValue(new Error('RCON down'));
+    mcsrvstat.fetchStatus.mockResolvedValue({
+      online: true,
+      players: { online: 5, max: 20, list: [] },
+      version: '1.20',
+      stale: true,
+    });
+
+    await statusCommand.execute(interaction);
+
+    const embed = interaction._lastEmbeds[0];
+    expect(embed.data.footer.text).toContain('outdated');
+    expect(embed.data.footer.text).toContain('API unreachable');
+  });
 });

@@ -411,6 +411,47 @@ function whoisEmbed(registration) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Cache                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Embed for the /cache command showing in-memory cache statistics.
+ *
+ * @param {{ hits: number, misses: number, keys: number, statusTtlRemaining: number|null }} stats
+ * @returns {EmbedBuilder}
+ */
+function cacheStatsEmbed(stats) {
+  const embed = new EmbedBuilder()
+    .setColor(COLOR.PURPLE)
+    .setTitle('\u{1F5B1}\uFE0F Cache Statistics')
+    .addFields(
+      { name: 'Hits', value: `${stats.hits}`, inline: true },
+      { name: 'Misses', value: `${stats.misses}`, inline: true },
+      { name: 'Cached Keys', value: `${stats.keys}`, inline: true },
+    )
+    .setTimestamp();
+
+  if (stats.statusTtlRemaining !== null) {
+    embed.addFields({
+      name: 'Server Status Cache',
+      value:
+        stats.statusTtlRemaining > 0
+          ? `Cached (${stats.statusTtlRemaining}s remaining)`
+          : 'Expired',
+      inline: false,
+    });
+  } else {
+    embed.addFields({
+      name: 'Server Status Cache',
+      value: 'Not cached',
+      inline: false,
+    });
+  }
+
+  return embed;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Utility                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -492,6 +533,7 @@ module.exports = {
   localWarningsEmbed,
   registrationEmbed,
   whoisEmbed,
+  cacheStatsEmbed,
   backupResultEmbed,
   formatDuration,
   formatBytes,

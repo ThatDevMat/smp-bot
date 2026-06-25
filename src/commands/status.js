@@ -4,6 +4,10 @@
  * Tries RCON first for live player data, then supplements with
  * mcsrvstat.us for MOTD/version/uptime.  If RCON is unreachable,
  * falls back entirely to the public API.
+ *
+ * The mcsrvstat.us result is cached for 30 seconds.  If the cache
+ * returns stale data (API unreachable) a footer warning is appended
+ * to the embed.
  */
 
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
@@ -64,6 +68,11 @@ module.exports = {
           if (meta.motd) {
             embed.setDescription(`*${meta.motd.slice(0, 200)}*`);
           }
+          if (meta.stale) {
+            embed.setFooter({
+              text: '\u26A0\uFE0F Server status may be outdated \u2014 API unreachable',
+            });
+          }
         }
       } catch {
         logger.debug('mcsrvstat.us supplement failed (non-fatal)');
@@ -79,6 +88,13 @@ module.exports = {
       try {
         const mcsrvData = await fetchStatus(config.rcon.host);
         const embed = statusEmbed(mcsrvData);
+
+        if (mcsrvData.stale) {
+          embed.setFooter({
+            text: '\u26A0\uFE0F Server status may be outdated \u2014 API unreachable',
+          });
+        }
+
         await interaction.editReply({ embeds: [embed] });
       } catch (fallbackErr) {
         logger.error('Both RCON and mcsrvstat.us failed', {

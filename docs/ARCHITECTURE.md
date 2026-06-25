@@ -246,6 +246,48 @@ The bot queries two AdvancedBans tables. **It never writes to them.**
 
 ---
 
+## Caching
+
+The bot maintains an in-memory cache using `node-cache` to reduce
+external API calls and avoid hitting rate limits. The cache is a singleton
+created in `src/utils/cache.js` — all cache access must go through the
+typed helper functions exported by that module.
+
+### What is cached and for how long
+
+| Data                      | TTL      | Why this TTL                          |
+| ------------------------- | -------- | ------------------------------------- |
+| Mojang UUID lookups       | 1 hour   | UUIDs rarely change; 1 hour prevents  |
+|                           |          | repeated lookups from exhausting the  |
+|                           |          | 600 req/10 min rate limit             |
+| mcsrvstat.us server status| 30 sec   | Status data changes at most every few |
+|                           |          | seconds; 30 s balances freshness with |
+|                           |          | cache hit rate during bursts          |
+
+### Stale fallback
+
+When the mcsrvstat.us API is unreachable but a (stale) cached result
+exists, the cache returns it with a `stale: true` flag. The `/status`
+command appends a ⚠️ footer to the embed when it sees this flag, so
+users know the data may be outdated rather than seeing an error.
+
+### Cache loss on restart
+
+The cache is in-memory only — it is lost when the bot process restarts.
+This is intentional and acceptable because:
+- TTLs are short (30 s – 1 h), so the cost of a cold cache is limited to
+  a handful of extra API calls after restart
+- Persisting cache to disk would add complexity with negligible benefit
+  given the short TTLs
+
+### Observability
+
+Staff can inspect current cache state via `/cache stats` (hits, misses,
+keys, server-status TTL) or flush the cache with `/cache flush`. This is
+useful before testing or after a Mojang API rate-limit incident.
+
+---
+
 ## Key Design Decisions
 
 ### Why SQLite for local data (not a second MySQL database)
