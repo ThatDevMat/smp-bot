@@ -105,12 +105,17 @@ function playerEventEmbed(username, eventType) {
 }
 
 function advancementEmbed(username, advancement, description) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR.YELLOW)
     .setTitle('\u{1F3C6} Advancement Unlocked')
     .setDescription(`**${username}** has made the advancement **[${advancement}]**`)
-    .setFooter({ text: description || '' })
     .setTimestamp();
+
+  if (description) {
+    embed.setFooter({ text: description });
+  }
+
+  return embed;
 }
 
 function serverEventEmbed(eventType) {

@@ -23,6 +23,7 @@ const {
 } = require('../utils/embeds');
 
 let client = null;
+let app;
 
 /**
  * Start the Express webhook server.
@@ -31,7 +32,7 @@ let client = null;
  */
 function init(discordClient) {
   client = discordClient;
-  const app = express();
+  app = express();
 
   app.use(express.json({ limit: '100kb' }));
 
@@ -42,6 +43,12 @@ function init(discordClient) {
       'server address can POST to /srvchat. Set it in .env to restrict access.',
     );
   }
+
+  // Health-check endpoint (no auth required — must be before the
+  // secret middleware so it stays accessible when secret is configured).
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
+  });
 
   // Shared-secret validation.
   app.use((req, res, next) => {
@@ -134,11 +141,6 @@ function init(discordClient) {
     }
   });
 
-  // Health-check endpoint (no auth required).
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', uptime: process.uptime() });
-  });
-
   const port = config.webhook.port || 3000;
   app.listen(port, () => {
     console.log(`[Webhook] DiscordSRV receiver listening on port ${port}`);
@@ -173,4 +175,4 @@ async function relayMessage(channelKey, embed) {
   }
 }
 
-module.exports = { init };
+module.exports = { init, getApp: () => app };
