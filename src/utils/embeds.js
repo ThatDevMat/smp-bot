@@ -370,9 +370,11 @@ function localWarningsEmbed(username, warnings) {
 /* ------------------------------------------------------------------ */
 
 function registrationEmbed(profile, discordId) {
+  const uuid = profile.uuid || '';
   return new EmbedBuilder()
     .setColor(COLOR.GREEN)
     .setTitle('\u2705 Registration Successful')
+    .setThumbnail(`https://minotar.net/avatar/${uuid}`)
     .addFields(
       { name: 'Discord User', value: `<@${discordId}>`, inline: true },
       {
@@ -386,9 +388,11 @@ function registrationEmbed(profile, discordId) {
 }
 
 function whoisEmbed(registration) {
+  const uuid = registration.minecraft_uuid || '';
   return new EmbedBuilder()
     .setColor(COLOR.BLUE)
     .setTitle('Player Lookup')
+    .setThumbnail(`https://minotar.net/avatar/${uuid}`)
     .addFields(
       {
         name: 'Discord User',
@@ -512,6 +516,171 @@ function backupResultEmbed({ fileName, sizeBytes, durationMs }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Player Notes                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Embed for a single player note (shown when adding or viewing one).
+ */
+function noteAddEmbed({ noteId, playerName, playerUuid, note, addedBy }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.TEAL)
+    .setTitle(':memo: Note Added')
+    .addFields(
+      {
+        name: 'Player',
+        value: `\`${playerName}\` (\`${playerUuid}\`)`,
+        inline: false,
+      },
+      { name: 'Note', value: note, inline: false },
+      { name: 'Added By', value: `<@${addedBy}>`, inline: true },
+      { name: 'Note ID', value: `\`#${noteId}\``, inline: true },
+    )
+    .setTimestamp();
+}
+
+/**
+ * Embed listing all notes for a player.
+ */
+function noteListEmbed(playerName, notes) {
+  const embed = new EmbedBuilder()
+    .setColor(COLOR.TEAL)
+    .setTitle(':memo: Player Notes')
+    .setDescription(`Notes for **${playerName}**`)
+    .setFooter({ text: `Total: ${notes.length}` })
+    .setTimestamp();
+
+  if (notes.length === 0) {
+    embed.setDescription(`No notes for **${playerName}**.`);
+    return embed;
+  }
+
+  notes.slice(0, 10).forEach((n) => {
+    embed.addFields({
+      name: `#${n.id} — ${n.added_at}`,
+      value: `${n.note}\n_By: <@${n.added_by}>_`,
+      inline: false,
+    });
+  });
+
+  if (notes.length > 10) {
+    embed.setDescription(`*Showing 10 of ${notes.length} notes*`);
+  }
+
+  return embed;
+}
+
+/**
+ * Embed confirming a note was removed.
+ */
+function noteRemoveEmbed(noteId, playerName) {
+  return new EmbedBuilder()
+    .setColor(COLOR.RED)
+    .setTitle(':wastebasket: Note Removed')
+    .setDescription(`Note #${noteId} for **${playerName}** has been removed.`)
+    .setTimestamp();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Welcome                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Embed for the welcome message sent when a player registers.
+ */
+function welcomeEmbed(minecraftUsername) {
+  return new EmbedBuilder()
+    .setColor(COLOR.GREEN)
+    .setTitle(':white_check_mark: Welcome to the SMP!')
+    .setDescription(
+      `Your Minecraft account **${minecraftUsername}** has been linked. ` +
+        'You now have access to the server. Use `/status` to check if ' +
+        'the server is online and `/event list` to see upcoming events!',
+    )
+    .setTimestamp();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Console                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Embed showing the result of a console command.
+ */
+function consoleResultEmbed(command, output) {
+  const embed = new EmbedBuilder()
+    .setColor(COLOR.GRAY)
+    .setTitle(':desktop: Console Command')
+    .addFields({ name: 'Command', value: `\`/${command}\``, inline: false })
+    .setTimestamp();
+
+  if (output) {
+    embed.addFields({
+      name: 'Output',
+      value: `\`\`\`${output.slice(0, 1000)}\`\`\``,
+      inline: false,
+    });
+  } else {
+    embed.addFields({
+      name: 'Output',
+      value: '*Command executed (no output)*',
+      inline: false,
+    });
+  }
+
+  return embed;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Scheduled Announcements                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Embed confirming a scheduled announcement was created.
+ */
+function announceCreatedEmbed({ id, channelId, message, cronExpression }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.GREEN)
+    .setTitle(':loudspeaker: Announcement Scheduled')
+    .addFields(
+      { name: 'ID', value: `\`#${id}\``, inline: true },
+      { name: 'Channel', value: `<#${channelId}>`, inline: true },
+      { name: 'Schedule', value: `\`${cronExpression}\``, inline: true },
+      { name: 'Message', value: message.slice(0, 500), inline: false },
+    )
+    .setTimestamp();
+}
+
+/**
+ * Embed listing all scheduled announcements.
+ */
+function announceListEmbed(announcements) {
+  const embed = new EmbedBuilder()
+    .setColor(COLOR.BLUE)
+    .setTitle(':loudspeaker: Scheduled Announcements')
+    .setFooter({ text: `Total: ${announcements.length}` })
+    .setTimestamp();
+
+  if (announcements.length === 0) {
+    embed.setDescription('No scheduled announcements.');
+    return embed;
+  }
+
+  announcements.forEach((a) => {
+    const status = a.enabled
+      ? ':green_circle: Active'
+      : ':red_circle: Disabled';
+    embed.addFields({
+      name: `#${a.id} — ${status}`,
+      value: `**Channel:** <#${a.channel_id}>\n**Cron:** \`${a.cron_expression}\`\n**Message:** ${a.message.slice(0, 200)}`,
+      inline: false,
+    });
+  });
+
+  return embed;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Exports                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -538,4 +707,11 @@ module.exports = {
   backupResultEmbed,
   formatDuration,
   formatBytes,
+  noteAddEmbed,
+  noteListEmbed,
+  noteRemoveEmbed,
+  welcomeEmbed,
+  consoleResultEmbed,
+  announceCreatedEmbed,
+  announceListEmbed,
 };

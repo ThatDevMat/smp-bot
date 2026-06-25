@@ -10,7 +10,7 @@
  * to the embed.
  */
 
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const rcon = require('../integrations/rcon');
 const { fetchStatus } = require('../integrations/mcsrvstat');
 const { statusEmbed } = require('../utils/embeds');
@@ -30,55 +30,36 @@ module.exports = {
     try {
       // Primary path: live data via RCON.
       const rconData = await rcon.getOnlinePlayers();
-      const embed = new EmbedBuilder()
-        .setTitle('\u2705 Server Online')
-        .setColor(0x2ecc71)
-        .addFields({
-          name: 'Players',
-          value: `${rconData.count}/${rconData.max}`,
-          inline: true,
-        });
 
-      if (rconData.players && rconData.players.length > 0) {
-        embed.addFields({
-          name: 'Online Players',
-          value: rconData.players.map((p) => `\`${p}\``).join(', '),
-          inline: false,
-        });
-      }
+      const embedData = {
+        online: true,
+        players: {
+          online: rconData.count,
+          max: rconData.max,
+          list: rconData.players || [],
+        },
+      };
 
       // Supplement with public API metadata (non-critical — swallow failures).
       try {
         const meta = await fetchStatus(config.rcon.host);
         if (meta && meta.online) {
-          if (meta.version) {
-            embed.addFields({
-              name: 'Version',
-              value: meta.version,
-              inline: true,
-            });
-          }
-          if (meta.software) {
-            embed.addFields({
-              name: 'Software',
-              value: meta.software,
-              inline: true,
-            });
-          }
-          if (meta.motd) {
-            embed.setDescription(`*${meta.motd.slice(0, 200)}*`);
-          }
-          if (meta.stale) {
-            embed.setFooter({
-              text: '\u26A0\uFE0F Server status may be outdated \u2014 API unreachable',
-            });
-          }
+          embedData.version = meta.version;
+          embedData.software = meta.software;
+          embedData.motd = meta.motd;
+          embedData.stale = meta.stale;
         }
       } catch {
         logger.debug('mcsrvstat.us supplement failed (non-fatal)');
       }
 
-      embed.setTimestamp();
+      const embed = statusEmbed(embedData);
+      if (embedData.stale) {
+        embed.setFooter({
+          text: '\u26A0\uFE0F Server status may be outdated \u2014 API unreachable',
+        });
+      }
+
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
       // RCON failed — full fallback to public API.

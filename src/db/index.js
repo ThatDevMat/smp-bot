@@ -82,6 +82,24 @@ function initSchema() {
       PRIMARY KEY (event_id, discord_id),
       FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS scheduled_announcements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      channel_id TEXT NOT NULL,
+      message TEXT NOT NULL,
+      cron_expression TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS player_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT NOT NULL,
+      note TEXT NOT NULL,
+      added_by TEXT NOT NULL,
+      added_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 }
 
@@ -228,6 +246,47 @@ function setSeason({ seasonNumber, startDate, seed }) {
     .run(seasonNumber, startDate, seed);
 }
 
+// ---- Scheduled Announcements ------------------------------------------
+
+function createAnnouncement({ channelId, message, cronExpression, createdBy }) {
+  const stmt = getDb().prepare(`
+    INSERT INTO scheduled_announcements (channel_id, message, cron_expression, created_by)
+    VALUES (?, ?, ?, ?)
+  `);
+  const result = stmt.run(channelId, message, cronExpression, createdBy);
+  return result.lastInsertRowid;
+}
+
+function getAnnouncements() {
+  return getDb()
+    .prepare('SELECT * FROM scheduled_announcements ORDER BY id ASC')
+    .all();
+}
+
+function cancelAnnouncement(id) {
+  return getDb()
+    .prepare('UPDATE scheduled_announcements SET enabled = 0 WHERE id = ?')
+    .run(id);
+}
+
+// ---- Player Notes -----------------------------------------------------
+
+function addNote({ playerUuid, note, addedBy }) {
+  return getDb()
+    .prepare('INSERT INTO player_notes (uuid, note, added_by) VALUES (?, ?, ?)')
+    .run(playerUuid, note, addedBy);
+}
+
+function getPlayerNotes(playerUuid) {
+  return getDb()
+    .prepare('SELECT * FROM player_notes WHERE uuid = ? ORDER BY added_at DESC')
+    .all(playerUuid);
+}
+
+function deleteNote(id) {
+  return getDb().prepare('DELETE FROM player_notes WHERE id = ?').run(id);
+}
+
 /**
  * Close the SQLite database connection.
  */
@@ -258,5 +317,11 @@ module.exports = {
   removePoi,
   getCurrentSeason,
   setSeason,
+  createAnnouncement,
+  getAnnouncements,
+  cancelAnnouncement,
+  addNote,
+  getPlayerNotes,
+  deleteNote,
   closeDb,
 };

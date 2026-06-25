@@ -10,6 +10,7 @@ const { requireStaff } = require('../utils/permissions');
 const { runBackup } = require('../utils/backup');
 const { backupResultEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
+const { logAction } = require('../utils/audit');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,6 +24,15 @@ module.exports = {
     try {
       const result = await runBackup();
       const embed = backupResultEmbed(result);
+
+      await logAction({
+        client: interaction.client,
+        type: 'backup',
+        staff: interaction.user,
+        target: result.fileName,
+        details: `Size: ${(result.sizeBytes / 1024).toFixed(1)} KB`,
+      });
+
       await interaction.editReply({ embeds: [embed] });
       logger.info('Manual backup completed via /backup', {
         userId: interaction.user.id,

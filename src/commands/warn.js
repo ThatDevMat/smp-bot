@@ -14,6 +14,7 @@ const { warningIssuedEmbed, warningDmEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
 const { validateInput } = require('../utils/validate');
 const { WarnInput } = require('../schemas/moderation');
+const { logAction } = require('../utils/audit');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -76,6 +77,14 @@ module.exports = {
         input.reason,
         interaction.user.id,
       );
+      await logAction({
+        client: interaction.client,
+        type: 'warn',
+        staff: interaction.user,
+        target: player.username,
+        details: input.reason,
+      });
+
       await interaction.editReply({ embeds: [embed] });
 
       // DM the linked Discord user if registered.

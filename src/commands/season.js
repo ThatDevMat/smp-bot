@@ -12,6 +12,7 @@ const { seasonInfoEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
 const { validateInput } = require('../utils/validate');
 const { SetSeasonInput } = require('../schemas/season');
+const { logAction } = require('../utils/audit');
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -114,6 +115,14 @@ async function handleSet(interaction) {
     seasonNumber: input.number,
     startDate: input.startDate,
     seed: input.seed,
+  });
+
+  await logAction({
+    client: interaction.client,
+    type: 'season_set',
+    staff: interaction.user,
+    target: `Season #${input.number}`,
+    details: `Start: ${input.startDate}${input.seed ? `, Seed: ${input.seed}` : ''}`,
   });
 
   await interaction.reply({

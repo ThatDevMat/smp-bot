@@ -2,12 +2,15 @@
  * /register — Link a Discord account to a Minecraft username.
  *
  * All inputs validated through Zod before any API calls.
+ * On success, sends a welcome message to the configured welcome channel
+ * (if set) and displays the registration confirmation embed.
  */
 
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
 const mojang = require('../integrations/mojang');
-const { registrationEmbed } = require('../utils/embeds');
+const { registrationEmbed, welcomeEmbed } = require('../utils/embeds');
+const { config } = require('../config');
 const logger = require('../utils/logger');
 const { validateInput } = require('../utils/validate');
 const { RegisterInput } = require('../schemas/players');
@@ -56,6 +59,26 @@ module.exports = {
 
       const embed = registrationEmbed(profile, interaction.user.id);
       await interaction.editReply({ embeds: [embed] });
+
+      // Send welcome message to the configured welcome channel (non-blocking).
+      const welcomeChannelId = config.channels.welcome;
+      if (welcomeChannelId) {
+        const channel = interaction.client.channels.cache.get(welcomeChannelId);
+        if (channel) {
+          const wEmbed = welcomeEmbed(profile.username);
+          channel
+            .send({
+              content: `Welcome <@${interaction.user.id}>!`,
+              embeds: [wEmbed],
+            })
+            .catch((err) => {
+              logger.debug('Failed to send welcome message', {
+                channelId: welcomeChannelId,
+                error: err.message,
+              });
+            });
+        }
+      }
     } catch (err) {
       logger.error('Mojang API error during registration', {
         username: input.minecraftUsername,

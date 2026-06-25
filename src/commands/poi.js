@@ -5,13 +5,19 @@
  * All inputs validated through Zod schemas before processing.
  */
 
-const { SlashCommandBuilder } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require('discord.js');
 const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { poiRegisteredEmbed, poiListEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
 const { validateInput } = require('../utils/validate');
 const { AddPOIInput, RemovePOIInput } = require('../schemas/pois');
+const { logAction } = require('../utils/audit');
 
 const POIS_PER_PAGE = 5;
 
@@ -155,16 +161,86 @@ async function handleList(interaction) {
   }
 
   const totalPages = Math.ceil(pois.length / POIS_PER_PAGE);
+  let currentPage = 0;
 
-  for (let page = 0; page < totalPages; page++) {
+  /**
+   * Build the embed + action row for a given page index.
+   */
+  function buildPage(page) {
     const slice = pois.slice(page * POIS_PER_PAGE, (page + 1) * POIS_PER_PAGE);
-    if (page === 0) {
-      // Send the first page as the reply.
-      await interaction.reply({
-        embeds: [poiListEmbed(slice, page + 1, totalPages)],
+    const embed = poiListEmbed(slice, page + 1, totalPages);
+
+    const prevBtn = new ButtonBuilder()
+      .setCustomId('poi_prev')
+      .setLabel('◀ Previous')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0);
+
+    const nextBtn = new ButtonBuilder()
+      .setCustomId('poi_next')
+      .setLabel('Next ▶')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1);
+
+    const row = new ActionRowBuilder().addComponents(prevBtn, nextBtn);
+    return { embeds: [embed], components: [row] };
+  }
+
+  // Send the first page.
+  const reply = await interaction.reply({
+    ...buildPage(0),
+    fetchReply: true,
+  });
+
+  // Create a collector that expires after 2 minutes.
+  const collector = reply.createMessageComponentCollector({
+    time: 120_000,
+  });
+
+  collector.on('collect', async (btnInteraction) => {
+    if (btnInteraction.user.id !== interaction.user.id) {
+      return btnInteraction.reply({
+        content: 'You cannot control this pagination.',
+        ephemeral: true,
       });
     }
-  }
+
+    if (btnInteraction.customId === 'poi_prev' && currentPage > 0) {
+      currentPage--;
+    } else if (
+      btnInteraction.customId === 'poi_next' &&
+      currentPage < totalPages - 1
+    ) {
+      currentPage++;
+    }
+
+    await btnInteraction.update(buildPage(currentPage));
+  });
+
+  collector.on('end', async () => {
+    // Disable buttons after collector expires.
+    try {
+      const currentSlice = pois.slice(
+        currentPage * POIS_PER_PAGE,
+        (currentPage + 1) * POIS_PER_PAGE,
+      );
+      const embed = poiListEmbed(currentSlice, currentPage + 1, totalPages);
+      const prevBtn = new ButtonBuilder()
+        .setCustomId('poi_prev')
+        .setLabel('◀ Previous')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true);
+      const nextBtn = new ButtonBuilder()
+        .setCustomId('poi_next')
+        .setLabel('Next ▶')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true);
+      const row = new ActionRowBuilder().addComponents(prevBtn, nextBtn);
+      await interaction.editReply({ embeds: [embed], components: [row] });
+    } catch {
+      // Reply may have been deleted — ignore.
+    }
+  });
 }
 
 async function handleRemove(interaction) {
@@ -195,6 +271,15 @@ async function handleRemove(interaction) {
   }
 
   db.removePoi(input.name);
+
+  await logAction({
+    client: interaction.client,
+    type: 'poi_remove',
+    staff: interaction.user,
+    target: input.name,
+    details: '',
+  });
+
   await interaction.reply({
     content: `\u2705 POI "${input.name}" removed.`,
     ephemeral: true,

@@ -112,6 +112,17 @@ let httpServer;
     });
     logger.info('Event reminder scheduler started', { interval: '30min' });
 
+    // Announcement scheduler (every minute).
+    cron.schedule('* * * * *', () => {
+      checkAnnouncements(client).catch((err) =>
+        logger.error('Announcement scheduler error', {
+          error: err.message,
+          stack: err.stack,
+        }),
+      );
+    });
+    logger.info('Announcement scheduler started', { interval: '1min' });
+
     // Backup scheduler (daily at configured cron time).
     logger.info('Backup scheduler started', { cron: config.backup.cron });
     cron.schedule(config.backup.cron, () => {
@@ -227,6 +238,82 @@ async function checkEventReminders(discordClient) {
           rsvpCount,
         });
       }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Scheduled Announcements                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Tracks announcement IDs that have been sent this process lifetime
+ * to prevent duplicate sends on overlapping cron ticks.
+ */
+const sentAnnouncementIds = new Set();
+
+/**
+ * Check whether a cron expression matches the current minute.
+ * Uses node-cron's internal TimeMatcher for reliable evaluation.
+ */
+const TimeMatcher = require('node-cron/src/time-matcher');
+
+function doesCronMatchNow(expression) {
+  try {
+    const matcher = new TimeMatcher(expression);
+    return matcher.match(new Date());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check scheduled announcements and send any that are due.
+ * Runs every minute via node-cron.
+ */
+async function checkAnnouncements(discordClient) {
+  const announcements = db.getAnnouncements();
+
+  for (const announcement of announcements) {
+    // Skip disabled entries.
+    if (!announcement.enabled) continue;
+
+    // Skip if already sent in this process lifetime.
+    if (sentAnnouncementIds.has(announcement.id)) continue;
+
+    // Check if the cron expression matches the current time.
+    if (!doesCronMatchNow(announcement.cron_expression)) continue;
+
+    // Mark as sent so it doesn't fire again this process lifetime.
+    sentAnnouncementIds.add(announcement.id);
+
+    // Clean up old entries from the Set periodically.
+    if (sentAnnouncementIds.size > 100) {
+      sentAnnouncementIds.clear();
+    }
+
+    // Fetch the channel and send.
+    const channel = discordClient.channels.cache.get(announcement.channel_id);
+    if (!channel) {
+      logger.warn('Announcement channel not found in cache', {
+        announcementId: announcement.id,
+        channelId: announcement.channel_id,
+      });
+      continue;
+    }
+
+    try {
+      await channel.send(announcement.message);
+      logger.info('Scheduled announcement sent', {
+        announcementId: announcement.id,
+        channelId: announcement.channel_id,
+      });
+    } catch (err) {
+      logger.error('Failed to send scheduled announcement', {
+        announcementId: announcement.id,
+        channelId: announcement.channel_id,
+        error: err.message,
+      });
     }
   }
 }
