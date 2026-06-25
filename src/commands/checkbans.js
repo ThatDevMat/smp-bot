@@ -1,7 +1,15 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+/**
+ * /checkbans — Query AdvancedBans for active punishments.
+ *
+ * Staff-only.  Accepts a Minecraft username or UUID, resolves it via
+ * the Mojang API if needed, then queries the AdvancedBans MySQL DB.
+ */
+
+const { SlashCommandBuilder } = require('discord.js');
 const advancedbans = require('../integrations/advancedbans');
-const mojang = require('../integrations/mojang');
 const { requireStaff } = require('../utils/permissions');
+const { resolvePlayer } = require('../utils/playerResolver');
+const { activePunishmentsEmbed } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,41 +27,30 @@ module.exports = {
     const input = interaction.options.getString('player');
 
     try {
-      // Determine if input is UUID or username
-      const isUuid = /^[a-fA-F0-9-]{32,36}$/.test(input);
-      let uuid = isUuid ? input.replace(/-/g, '') : null;
-
-      if (!uuid) {
-        const profile = await mojang.getUuidByUsername(input);
-        if (!profile) {
-          return interaction.editReply({ content: `❌ Could not find Minecraft account "${input}".` });
-        }
-        uuid = profile.uuid;
+      const player = await resolvePlayer(input);
+      if (!player) {
+        return interaction.editReply({
+          content: `\u274C Could not find Minecraft account "${input}".`,
+        });
       }
 
-      const punishments = await advancedbans.getActivePunishments(uuid);
+      const punishments = await advancedbans.getActivePunishments(player.uuid);
 
       if (punishments.length === 0) {
-        return interaction.editReply({ content: `✅ \`${input}\` has no active punishments.` });
+        return interaction.editReply({
+          content: `\u2705 \`${player.username}\` has no active punishments.`,
+        });
       }
 
-      const embed = new EmbedBuilder()
-        .setColor(0xe74c3c)
-        .setTitle(`⛔ Active Punishments for ${input}`)
-        .setTimestamp();
-
-      punishments.forEach((p) => {
-        const duration = p.end ? `Expires: ${new Date(p.end).toLocaleString()}` : 'Permanent';
-        embed.addFields({
-          name: `${p.type.toUpperCase()} — ${new Date(p.start).toLocaleString()}`,
-          value: `Reason: ${p.reason || 'No reason provided'}\n${duration}\nBy: ${p.executor || 'Unknown'}`,
-          inline: false,
-        });
-      });
-
+      const embed = activePunishmentsEmbed(player.username, punishments);
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
-      await interaction.editReply({ content: `❌ Database error: ${err.message}` });
+      console.error(
+        `[Checkbans] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
+      );
+      await interaction.editReply({
+        content: '\u274C Could not query the punishment database. Is the AdvancedBans MySQL server reachable?',
+      });
     }
   },
 };

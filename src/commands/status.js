@@ -1,3 +1,11 @@
+/**
+ * /status — Server status.
+ *
+ * Tries RCON first for live player data, then supplements with
+ * mcsrvstat.us for MOTD/version/uptime.  If RCON is unreachable,
+ * falls back entirely to the public API.
+ */
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const rcon = require('../integrations/rcon');
 const { fetchStatus } = require('../integrations/mcsrvstat');
@@ -13,10 +21,10 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      // Try RCON first for live data
+      // Primary path: live data via RCON.
       const rconData = await rcon.getOnlinePlayers();
       const embed = new EmbedBuilder()
-        .setTitle('✅ Server Online')
+        .setTitle('\u2705 Server Online')
         .setColor(0x2ecc71)
         .addFields(
           { name: 'Players', value: `${rconData.count}/${rconData.max}`, inline: true },
@@ -30,30 +38,37 @@ module.exports = {
         });
       }
 
-      // Try mcsrvstat.us as a supplement for MOTD/version/uptime
+      // Supplement with public API metadata (non-critical — swallow failures).
       try {
-        const mcsrvData = await fetchStatus(config.rcon.host);
-        if (mcsrvData && mcsrvData.online) {
-          if (mcsrvData.version) embed.addFields({ name: 'Version', value: mcsrvData.version, inline: true });
-          if (mcsrvData.software) embed.addFields({ name: 'Software', value: mcsrvData.software, inline: true });
-          if (mcsrvData.motd) embed.setDescription(`*${mcsrvData.motd.slice(0, 200)}*`);
+        const meta = await fetchStatus(config.rcon.host);
+        if (meta && meta.online) {
+          if (meta.version) {
+            embed.addFields({ name: 'Version', value: meta.version, inline: true });
+          }
+          if (meta.software) {
+            embed.addFields({ name: 'Software', value: meta.software, inline: true });
+          }
+          if (meta.motd) {
+            embed.setDescription(`*${meta.motd.slice(0, 200)}*`);
+          }
         }
       } catch {
-        // mcsrvstat.us is just a supplement — ignore failures
+        console.warn('[Status] mcsrvstat.us supplement failed (non-fatal).');
       }
 
       embed.setTimestamp();
       await interaction.editReply({ embeds: [embed] });
-
     } catch (err) {
-      // RCON failed — fall back to mcsrvstat.us entirely
+      // RCON failed — full fallback to public API.
+      console.warn(`[Status] RCON failed, falling back to mcsrvstat.us: ${err.message}`);
       try {
         const mcsrvData = await fetchStatus(config.rcon.host);
         const embed = statusEmbed(mcsrvData);
         await interaction.editReply({ embeds: [embed] });
-      } catch (mcsrvErr) {
+      } catch (fallbackErr) {
+        console.error('[Status] Both RCON and mcsrvstat.us failed:', fallbackErr.message);
         await interaction.editReply({
-          content: '❌ Could not fetch server status. Both RCON and the status API are unreachable.',
+          content: '\u274C Could not fetch server status. Both RCON and the status API are unreachable.',
         });
       }
     }

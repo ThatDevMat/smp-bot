@@ -1,3 +1,14 @@
+/**
+ * Configuration loader.
+ *
+ * Reads all environment variables from `.env` (via dotenv) and exports
+ * a typed `config` object.  Also provides `validateConfig()` which
+ * must be called at startup to ensure that required secrets are present.
+ *
+ * No secrets are hardcoded anywhere in the codebase — everything comes
+ * from environment variables.
+ */
+
 require('dotenv').config();
 
 const config = {
@@ -34,7 +45,9 @@ const config = {
     polls: process.env.CHANNEL_POLLS,
   },
 
-  staffRoleIds: (process.env.STAFF_ROLE_IDS || '').split(',').filter(Boolean),
+  staffRoleIds: (process.env.STAFF_ROLE_IDS || '')
+    .split(',')
+    .filter(Boolean),
 };
 
 function validateConfig() {
@@ -44,10 +57,14 @@ function validateConfig() {
     ['GUILD_ID', config.bot.guildId],
   ];
 
-  const missing = required.filter(([, val]) => !val).map(([key]) => key);
+  const missing = required
+    .filter(([, val]) => !val)
+    .map(([key]) => key);
 
   if (missing.length > 0) {
-    console.error(`Missing required environment variables: ${missing.join(', ')}`);
+    console.error(
+      `Missing required environment variables: ${missing.join(', ')}`,
+    );
     console.error('Copy .env.example to .env and fill in your values.');
     process.exit(1);
   }

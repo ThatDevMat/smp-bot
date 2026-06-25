@@ -1,7 +1,11 @@
 /**
  * deploy-commands.js
- * Run this script to register or update all slash commands with Discord.
- * Usage: node deploy-commands.js
+ *
+ * Registers (or updates) all slash commands with the Discord REST API.
+ * Run this once after cloning, and again whenever you add or change
+ * a command definition.
+ *
+ * Usage:  node deploy-commands.js
  */
 
 require('dotenv').config();
@@ -11,14 +15,14 @@ const path = require('path');
 const { REST, Routes } = require('discord.js');
 const { config, validateConfig } = require('./src/config');
 
-// Validate that required env vars are present
 validateConfig();
 
 const commands = [];
 
-// Load all command definitions
 const commandsPath = path.join(__dirname, 'src', 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.js') && !file.startsWith('_'));
+const commandFiles = fs
+  .readdirSync(commandsPath)
+  .filter((file) => file.endsWith('.js') && !file.startsWith('_'));
 
 for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));

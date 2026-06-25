@@ -1,7 +1,14 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+/**
+ * /warnings — View local warning history.
+ *
+ * Staff-only.  Reads from SQLite (not AdvancedBans).
+ */
+
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
-const mojang = require('../integrations/mojang');
 const { requireStaff } = require('../utils/permissions');
+const { resolvePlayer } = require('../utils/playerResolver');
+const { localWarningsEmbed } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,46 +26,30 @@ module.exports = {
     const input = interaction.options.getString('player');
 
     try {
-      const isUuid = /^[a-fA-F0-9-]{32,36}$/.test(input);
-      let uuid = isUuid ? input.replace(/-/g, '') : null;
-      let username = input;
-
-      if (!uuid) {
-        const profile = await mojang.getUuidByUsername(input);
-        if (!profile) {
-          return interaction.editReply({ content: `❌ Could not find Minecraft account "${input}".` });
-        }
-        uuid = profile.uuid;
-        username = profile.username;
+      const player = await resolvePlayer(input);
+      if (!player) {
+        return interaction.editReply({
+          content: `\u274C Could not find Minecraft account "${input}".`,
+        });
       }
 
-      const warnings = db.getWarningsByUuid(uuid);
+      const warnings = db.getWarningsByUuid(player.uuid);
 
       if (warnings.length === 0) {
-        return interaction.editReply({ content: `✅ \`${username}\` has no local warnings.` });
-      }
-
-      const embed = new EmbedBuilder()
-        .setColor(0xf1c40f)
-        .setTitle(`⚠️ Local Warnings — ${username}`)
-        .setFooter({ text: `Total: ${warnings.length}` })
-        .setTimestamp();
-
-      warnings.slice(0, 10).forEach((w) => {
-        embed.addFields({
-          name: `#${w.id} — ${w.issued_at}`,
-          value: `Reason: ${w.reason}\nIssued by: <@${w.issued_by}>`,
-          inline: false,
+        return interaction.editReply({
+          content: `\u2705 \`${player.username}\` has no local warnings.`,
         });
-      });
-
-      if (warnings.length > 10) {
-        embed.setDescription(`*Showing 10 of ${warnings.length} entries*`);
       }
 
+      const embed = localWarningsEmbed(player.username, warnings);
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
-      await interaction.editReply({ content: `❌ Error: ${err.message}` });
+      console.error(
+        `[Warnings] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
+      );
+      await interaction.editReply({
+        content: '\u274C An error occurred while looking up warnings.',
+      });
     }
   },
 };

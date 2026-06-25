@@ -1,7 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+/**
+ * /warn — Issue a local warning (Discord-side tracking).
+ *
+ * Staff-only.  Stores the warning in SQLite.  If the target has linked
+ * their Discord account via /register, sends a DM notification.
+ * Warnings are independent of AdvancedBans.
+ */
+
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
-const mojang = require('../integrations/mojang');
 const { requireStaff } = require('../utils/permissions');
+const { resolvePlayer } = require('../utils/playerResolver');
+const { warningIssuedEmbed, warningDmEmbed } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,67 +33,54 @@ module.exports = {
     const reason = interaction.options.getString('reason');
 
     try {
-      // Resolve UUID
-      const isUuid = /^[a-fA-F0-9-]{32,36}$/.test(input);
-      let uuid = isUuid ? input.replace(/-/g, '') : null;
-      let username = input;
-
-      if (!uuid) {
-        const profile = await mojang.getUuidByUsername(input);
-        if (!profile) {
-          return interaction.editReply({ content: `❌ Could not find Minecraft account "${input}".` });
-        }
-        uuid = profile.uuid;
-        username = profile.username;
+      const player = await resolvePlayer(input);
+      if (!player) {
+        return interaction.editReply({
+          content: `\u274C Could not find Minecraft account "${input}".`,
+        });
       }
 
-      // Check if the player has a linked Discord account
-      const registration = db.getPlayerByUuid(uuid);
+      // Check if the player has linked a Discord account.
+      const registration = db.getPlayerByUuid(player.uuid);
 
       db.addWarning({
-        playerUuid: uuid,
+        playerUuid: player.uuid,
         discordId: registration ? registration.discord_id : null,
         reason,
         issuedBy: interaction.user.id,
       });
 
-      const embed = new EmbedBuilder()
-        .setColor(0xf1c40f)
-        .setTitle('⚠️ Warning Issued')
-        .addFields(
-          { name: 'Player', value: `\`${username}\` (UUID: \`${uuid}\`)`, inline: false },
-          { name: 'Reason', value: reason, inline: false },
-          { name: 'Issued By', value: `<@${interaction.user.id}>`, inline: true },
-        )
-        .setTimestamp();
-
+      const embed = warningIssuedEmbed(
+        player.username,
+        player.uuid,
+        reason,
+        interaction.user.id,
+      );
       await interaction.editReply({ embeds: [embed] });
 
-      // DM the linked Discord user if registered
+      // DM the linked Discord user if registered.
       if (registration) {
         try {
           const warnedUser = await interaction.client.users.fetch(registration.discord_id);
           if (warnedUser) {
             await warnedUser.send({
-              embeds: [
-                new EmbedBuilder()
-                  .setColor(0xf1c40f)
-                  .setTitle('⚠️ You Have Been Warned')
-                  .setDescription(`You have received a warning on the SMP server.`)
-                  .addFields(
-                    { name: 'Minecraft Account', value: `\`${username}\``, inline: true },
-                    { name: 'Reason', value: reason, inline: false },
-                  )
-                  .setTimestamp(),
-              ],
+              embeds: [warningDmEmbed(player.username, reason)],
             });
           }
-        } catch {
-          // DM might fail if user has DMs disabled — ignore silently
+        } catch (dmErr) {
+          // DM can fail if the user has DMs disabled or the bot is blocked.
+          console.warn(
+            `[Warn] Could not DM user ${registration.discord_id}: ${dmErr.message}`,
+          );
         }
       }
     } catch (err) {
-      await interaction.editReply({ content: `❌ Error: ${err.message}` });
+      console.error(
+        `[Warn] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
+      );
+      await interaction.editReply({
+        content: '\u274C An error occurred while issuing the warning.',
+      });
     }
   },
 };

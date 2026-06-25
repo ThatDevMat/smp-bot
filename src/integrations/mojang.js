@@ -1,11 +1,24 @@
+/**
+ * Mojang API wrappers.
+ *
+ * Resolves Minecraft usernames to UUIDs, fetches name-change history,
+ * and verifies premium (paid) account status.  All HTTP calls use
+ * Node.js built-in `https` — no extra dependencies required.
+ *
+ * Rate-limit notes: the Mojang API allows about 600 requests per 10
+ * minutes per IP.  `/register` and staff lookup commands are unlikely
+ * to hit this in normal use.
+ */
+
 const https = require('https');
 
 const MOJANG_API = 'https://api.mojang.com';
 const MOJANG_SESSION = 'https://sessionserver.mojang.com';
 
 /**
- * Fetch a player's UUID from their Minecraft username via Mojang API.
- * @param {string} username - Minecraft username
+ * Fetch a player's UUID from their current Minecraft username.
+ *
+ * @param {string} username
  * @returns {Promise<{uuid: string, username: string}|null>}
  */
 function getUuidByUsername(username) {
@@ -21,15 +34,14 @@ function getUuidByUsername(username) {
           return;
         }
         if (res.statusCode !== 200) {
-          reject(new Error(`Mojang API returned status ${res.statusCode}: ${data}`));
+          reject(
+            new Error(`Mojang API returned status ${res.statusCode}`),
+          );
           return;
         }
         try {
           const parsed = JSON.parse(data);
-          resolve({
-            uuid: parsed.id,
-            username: parsed.name,
-          });
+          resolve({ uuid: parsed.id, username: parsed.name });
         } catch (err) {
           reject(new Error(`Failed to parse Mojang response: ${err.message}`));
         }
@@ -41,13 +53,13 @@ function getUuidByUsername(username) {
 }
 
 /**
- * Fetch username history for a UUID (for display purposes).
- * @param {string} uuid - Minecraft UUID (with or without hyphens)
+ * Fetch full name-change history for a UUID.
+ *
+ * @param {string} uuid  UUID with or without hyphens.
  * @returns {Promise<Array<{name: string, changedToAt: number|null}>>}
  */
 function getNameHistory(uuid) {
   return new Promise((resolve, reject) => {
-    // Remove hyphens if present
     const cleanUuid = uuid.replace(/-/g, '');
     const url = `${MOJANG_API}/user/profiles/${cleanUuid}/names`;
 
@@ -56,12 +68,13 @@ function getNameHistory(uuid) {
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new Error(`Mojang API returned status ${res.statusCode} for name history`));
+          reject(
+            new Error(`Mojang name-history API returned status ${res.statusCode}`),
+          );
           return;
         }
         try {
-          const parsed = JSON.parse(data);
-          resolve(parsed);
+          resolve(JSON.parse(data));
         } catch (err) {
           reject(new Error(`Failed to parse name history: ${err.message}`));
         }
@@ -73,8 +86,9 @@ function getNameHistory(uuid) {
 }
 
 /**
- * Check if a Minecraft account exists (has paid for the game).
- * @param {string} uuid - Minecraft UUID
+ * Check whether a UUID corresponds to a premium (paid) Minecraft account.
+ *
+ * @param {string} uuid
  * @returns {Promise<boolean>}
  */
 function hasPaidGame(uuid) {
@@ -83,8 +97,9 @@ function hasPaidGame(uuid) {
     const url = `${MOJANG_SESSION}/session/minecraft/hasJoined?username=${cleanUuid}`;
 
     https.get(url, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      // Consume response data to free memory, even though we only
+      // care about the status code.
+      res.resume();
       res.on('end', () => {
         resolve(res.statusCode === 200);
       });

@@ -1,75 +1,109 @@
+/**
+ * DiscordSRV webhook (Express) receiver.
+ *
+ * Listens for HTTP POST payloads from the DiscordSRV Minecraft plugin
+ * and relays them to the appropriate Discord text channels as rich
+ * embeds.
+ *
+ * Expected payload shape:
+ *   { channel, username, message, type }
+ * where type is one of: chat | join | leave | death | advancement | start | stop
+ *
+ * Every incoming request validates the shared secret (if configured)
+ * and checks that required fields are present before acting.
+ */
+
 const express = require('express');
 const { config } = require('../config');
-const { chatMessageEmbed, playerEventEmbed, advancementEmbed, serverEventEmbed } = require('../utils/embeds');
+const {
+  chatMessageEmbed,
+  playerEventEmbed,
+  advancementEmbed,
+  serverEventEmbed,
+} = require('../utils/embeds');
 
 let client = null;
 
 /**
- * Initialize the Express webhook server to receive DiscordSRV payloads.
+ * Start the Express webhook server.
+ *
  * @param {import('discord.js').Client} discordClient
  */
 function init(discordClient) {
   client = discordClient;
   const app = express();
 
-  app.use(express.json());
+  app.use(express.json({ limit: '100kb' }));
 
-  // Webhook secret validation middleware
+  // Warn operators if the webhook secret is left empty.
+  if (!config.webhook.secret) {
+    console.warn(
+      '[Webhook] WEBHOOK_SECRET is not set — anyone who knows your ' +
+      'server address can POST to /srvchat. Set it in .env to restrict access.',
+    );
+  }
+
+  // Shared-secret validation.
   app.use((req, res, next) => {
     if (config.webhook.secret) {
       const token = req.headers['x-webhook-secret'] || req.query.secret;
       if (token !== config.webhook.secret) {
-        return res.status(403).json({ error: 'Invalid webhook secret' });
+        return res.status(401).json({ error: 'Invalid webhook secret' });
       }
     }
     next();
   });
 
-  /**
-   * DiscordSRV webhook endpoint.
-   * Expected JSON payload structure (DiscordSRV):
-   * {
-   *   "channel": "global",          // or "advancement", "death", "join", "leave"
-   *   "username": "Steve",
-   *   "message": "Hello everyone!",
-   *   "type": "chat"                // or "join", "leave", "death", "advancement", "start", "stop"
-   * }
-   */
   app.post('/srvchat', async (req, res) => {
     try {
       const payload = req.body;
-      if (!payload) {
-        return res.status(400).json({ error: 'Empty payload' });
+
+      if (!payload || typeof payload !== 'object') {
+        return res.status(400).json({ error: 'Empty or non-object payload' });
       }
 
+      // Validate that at least one useful field is present.
       const { channel, username, message, type } = payload;
-
-      // Determine what kind of event this is
       const eventType = type || channel || 'chat';
 
       switch (eventType) {
         case 'chat':
         case 'global':
-          await relayMessage('minecraftChat', chatMessageEmbed(username, message));
+          await relayMessage(
+            'minecraftChat',
+            chatMessageEmbed(username, message),
+          );
           break;
 
         case 'join':
-          await relayMessage('serverLog', playerEventEmbed(username, 'join'));
+          await relayMessage(
+            'serverLog',
+            playerEventEmbed(username, 'join'),
+          );
           break;
 
         case 'leave':
-          await relayMessage('serverLog', playerEventEmbed(username, 'leave'));
+          await relayMessage(
+            'serverLog',
+            playerEventEmbed(username, 'leave'),
+          );
           break;
 
         case 'death':
-          await relayMessage('serverLog', playerEventEmbed(username || message, 'death'));
+          await relayMessage(
+            'serverLog',
+            playerEventEmbed(username || message, 'death'),
+          );
           break;
 
         case 'advancement': {
-          // DiscordSRV sends: { "username": "Steve", "message": "advancement_title", "advancement": "title" }
-          const advTitle = payload.advancement || message || 'Unknown Advancement';
+          const advTitle =
+            payload.advancement || message || 'Unknown Advancement';
           const advDescription = payload.description || '';
-          await relayMessage('serverLog', advancementEmbed(username, advTitle, advDescription));
+          await relayMessage(
+            'serverLog',
+            advancementEmbed(username, advTitle, advDescription),
+          );
           break;
         }
 
@@ -82,19 +116,26 @@ function init(discordClient) {
           break;
 
         default:
-          // Unknown type — try to relay as chat
-          await relayMessage('minecraftChat', chatMessageEmbed(username || 'Server', message || JSON.stringify(payload)));
+          // Unknown type — relay as a generic chat message.
+          await relayMessage(
+            'minecraftChat',
+            chatMessageEmbed(
+              username || 'Server',
+              message || JSON.stringify(payload),
+            ),
+          );
       }
 
       res.json({ status: 'ok' });
     } catch (err) {
-      console.error('[Webhook] Error processing payload:', err.message);
-      res.status(500).json({ error: err.message });
+      // Log the full error internally but never expose details to callers.
+      console.error('[Webhook] Error processing payload:', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
-  // Health check endpoint
-  app.get('/health', (req, res) => {
+  // Health-check endpoint (no auth required).
+  app.get('/health', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
 
@@ -105,12 +146,18 @@ function init(discordClient) {
 }
 
 /**
- * Send an embed to a configured channel.
+ * Send an embed to one of the configured Discord channels.
  */
 async function relayMessage(channelKey, embed) {
   const channelId = config.channels[channelKey];
+
   if (!channelId) {
-    console.warn(`[Webhook] Channel "${channelKey}" not configured — skipping message.`);
+    // Not configured — this is normal if the operator only uses a subset
+    // of channels, so log at debug level (info for now, but could be
+    // moved to debug in production).
+    console.info(
+      `[Webhook] Channel "${channelKey}" not configured \u2014 skipping message.`,
+    );
     return;
   }
 
@@ -120,7 +167,9 @@ async function relayMessage(channelKey, embed) {
       await channel.send({ embeds: [embed] });
     }
   } catch (err) {
-    console.error(`[Webhook] Failed to send to channel ${channelId}:`, err.message);
+    console.error(
+      `[Webhook] Failed to send to channel ${channelId}: ${err.message}`,
+    );
   }
 }
 

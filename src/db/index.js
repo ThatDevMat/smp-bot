@@ -1,3 +1,13 @@
+/**
+ * SQLite database layer.
+ *
+ * Provides a lazy-initialised better-sqlite3 connection (WAL mode,
+ * foreign keys enforced) and a set of typed helpers for every table:
+ * events, player_registry, warnings, pois, seasons, rsvps.
+ *
+ * All queries use parameterised statements — no string interpolation.
+ */
+
 const Database = require('better-sqlite3');
 const path = require('path');
 
@@ -75,7 +85,7 @@ function initSchema() {
   `);
 }
 
-// ---- Event helpers ----
+// ---- Events ------------------------------------------------------------
 
 function createEvent({ name, description, event_date, event_time, timezone, created_by }) {
   const stmt = getDb().prepare(`
@@ -87,10 +97,11 @@ function createEvent({ name, description, event_date, event_time, timezone, crea
 }
 
 function getUpcomingEvents() {
-  return getDb().prepare(`
-    SELECT * FROM events WHERE cancelled = 0 AND event_date >= date('now')
-    ORDER BY event_date ASC, event_time ASC
-  `).all();
+  return getDb()
+    .prepare(
+      'SELECT * FROM events WHERE cancelled = 0 AND event_date >= date(\'now\') ORDER BY event_date ASC, event_time ASC',
+    )
+    .all();
 }
 
 function getEventById(id) {
@@ -102,33 +113,26 @@ function cancelEvent(id) {
 }
 
 function addRsvp(eventId, discordId) {
-  const stmt = getDb().prepare('INSERT OR IGNORE INTO rsvps (event_id, discord_id) VALUES (?, ?)');
-  return stmt.run(eventId, discordId);
+  return getDb()
+    .prepare('INSERT OR IGNORE INTO rsvps (event_id, discord_id) VALUES (?, ?)')
+    .run(eventId, discordId);
 }
 
 function getRsvpCount(eventId) {
-  const row = getDb().prepare('SELECT COUNT(*) as count FROM rsvps WHERE event_id = ?').get(eventId);
+  const row = getDb()
+    .prepare('SELECT COUNT(*) as count FROM rsvps WHERE event_id = ?')
+    .get(eventId);
   return row.count;
 }
 
-function getEventsNeedingReminder(hoursBefore) {
-  // Find events where the event is hoursBefore hours away and we haven't sent reminders yet
-  // For simplicity, return all upcoming events that haven't passed yet
-  return getDb().prepare(`
-    SELECT * FROM events
-    WHERE cancelled = 0 AND event_date >= date('now')
-    ORDER BY event_date ASC, event_time ASC
-  `).all();
-}
-
-// ---- Player registry helpers ----
+// ---- Player registry ---------------------------------------------------
 
 function registerPlayer(discordId, minecraftUsername, minecraftUuid) {
-  const stmt = getDb().prepare(`
-    INSERT OR REPLACE INTO player_registry (discord_id, minecraft_username, minecraft_uuid)
-    VALUES (?, ?, ?)
-  `);
-  return stmt.run(discordId, minecraftUsername, minecraftUuid);
+  return getDb()
+    .prepare(
+      'INSERT OR REPLACE INTO player_registry (discord_id, minecraft_username, minecraft_uuid) VALUES (?, ?, ?)',
+    )
+    .run(discordId, minecraftUsername, minecraftUuid);
 }
 
 function getPlayerByDiscord(discordId) {
@@ -143,28 +147,28 @@ function getPlayerByUuid(uuid) {
   return getDb().prepare('SELECT * FROM player_registry WHERE minecraft_uuid = ?').get(uuid);
 }
 
-// ---- Warning helpers ----
+// ---- Warnings (local) --------------------------------------------------
 
 function addWarning({ playerUuid, discordId, reason, issuedBy }) {
-  const stmt = getDb().prepare(`
-    INSERT INTO warnings (player_uuid, discord_id, reason, issued_by)
-    VALUES (?, ?, ?, ?)
-  `);
-  return stmt.run(playerUuid, discordId, reason, issuedBy);
+  return getDb()
+    .prepare('INSERT INTO warnings (player_uuid, discord_id, reason, issued_by) VALUES (?, ?, ?, ?)')
+    .run(playerUuid, discordId, reason, issuedBy);
 }
 
 function getWarningsByUuid(playerUuid) {
-  return getDb().prepare('SELECT * FROM warnings WHERE player_uuid = ? ORDER BY issued_at DESC').all(playerUuid);
+  return getDb()
+    .prepare('SELECT * FROM warnings WHERE player_uuid = ? ORDER BY issued_at DESC')
+    .all(playerUuid);
 }
 
-// ---- POI helpers ----
+// ---- POIs --------------------------------------------------------------
 
 function addPoi({ name, x, y, z, dimension, description, createdBy }) {
-  const stmt = getDb().prepare(`
-    INSERT INTO pois (name, x, y, z, dimension, description, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-  return stmt.run(name, x, y, z, dimension, description, createdBy);
+  return getDb()
+    .prepare(
+      'INSERT INTO pois (name, x, y, z, dimension, description, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    )
+    .run(name, x, y, z, dimension, description, createdBy);
 }
 
 function getAllPois() {
@@ -179,19 +183,21 @@ function removePoi(name) {
   return getDb().prepare('DELETE FROM pois WHERE name = ?').run(name);
 }
 
-// ---- Season helpers ----
+// ---- Seasons -----------------------------------------------------------
 
 function getCurrentSeason() {
-  return getDb().prepare('SELECT * FROM seasons ORDER BY season_number DESC LIMIT 1').get();
+  return getDb()
+    .prepare('SELECT * FROM seasons ORDER BY season_number DESC LIMIT 1')
+    .get();
 }
 
 function setSeason({ seasonNumber, startDate, seed }) {
-  // Remove existing season with this number if it exists
-  getDb().prepare('DELETE FROM seasons WHERE season_number = ?').run(seasonNumber);
-  const stmt = getDb().prepare(`
-    INSERT INTO seasons (season_number, start_date, seed) VALUES (?, ?, ?)
-  `);
-  return stmt.run(seasonNumber, startDate, seed);
+  getDb()
+    .prepare('DELETE FROM seasons WHERE season_number = ?')
+    .run(seasonNumber);
+  return getDb()
+    .prepare('INSERT INTO seasons (season_number, start_date, seed) VALUES (?, ?, ?)')
+    .run(seasonNumber, startDate, seed);
 }
 
 module.exports = {
@@ -202,7 +208,6 @@ module.exports = {
   cancelEvent,
   addRsvp,
   getRsvpCount,
-  getEventsNeedingReminder,
   registerPlayer,
   getPlayerByDiscord,
   getPlayerByUsername,

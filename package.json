@@ -8,7 +8,13 @@
     "deploy": "node deploy-commands.js",
     "dev": "node --watch src/index.js"
   },
-  "keywords": ["discord", "minecraft", "smp", "bot", "discord.js"],
+  "keywords": [
+    "discord",
+    "minecraft",
+    "smp",
+    "bot",
+    "discord.js"
+  ],
   "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^11.7.0",
@@ -18,5 +24,8 @@
     "mysql2": "^3.12.0",
     "node-cron": "^3.0.3",
     "rcon-client": "^4.2.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
   }
 }

@@ -1,10 +1,22 @@
+/**
+ * AdvancedBans MySQL query helpers.
+ *
+ * Provides read-only access to the AdvancedBans MySQL database for
+ * checking active punishments (bans, mutes, warnings) and retrieving
+ * punishment history.  Uses mysql2 connection pooling so the bot can
+ * recover gracefully from transient database failures.
+ *
+ * Every query uses parameterised statements — no user-supplied data
+ * is ever interpolated into SQL strings.
+ */
+
 const mysql = require('mysql2/promise');
+const { config } = require('../config');
 
 let pool = null;
 
 function getPool() {
   if (!pool) {
-    const { config } = require('../config');
     pool = mysql.createPool({
       host: config.mysql.host,
       port: config.mysql.port,
@@ -14,37 +26,33 @@ function getPool() {
       waitForConnections: true,
       connectionLimit: 5,
       queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,
     });
   }
   return pool;
 }
 
 /**
- * Fetch active punishments for a player by UUID (bans, mutes, warnings).
- * AdvancedBans table structure may vary — these are the common table names.
+ * Fetch all active punishments for a UUID.
  */
 async function getActivePunishments(uuid) {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT * FROM punishments
-     WHERE uuid = ? AND active = 1
-     ORDER BY start DESC`,
-    [uuid]
+    'SELECT * FROM punishments WHERE uuid = ? AND active = 1 ORDER BY start DESC',
+    [uuid],
   );
   return rows;
 }
 
 /**
- * Fetch full punishment history for a player.
+ * Fetch full punishment history for a player (last 100 entries).
  */
 async function getPunishmentHistory(uuid) {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT * FROM punishments
-     WHERE uuid = ?
-     ORDER BY start DESC
-     LIMIT 100`,
-    [uuid]
+    'SELECT * FROM punishments WHERE uuid = ? ORDER BY start DESC LIMIT 100',
+    [uuid],
   );
   return rows;
 }
@@ -55,10 +63,8 @@ async function getPunishmentHistory(uuid) {
 async function getActiveBans(uuid) {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT * FROM punishments
-     WHERE uuid = ? AND type = 'ban' AND active = 1
-     ORDER BY start DESC`,
-    [uuid]
+    "SELECT * FROM punishments WHERE uuid = ? AND type = 'ban' AND active = 1 ORDER BY start DESC",
+    [uuid],
   );
   return rows;
 }
@@ -69,10 +75,8 @@ async function getActiveBans(uuid) {
 async function getActiveMutes(uuid) {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT * FROM punishments
-     WHERE uuid = ? AND type = 'mute' AND active = 1
-     ORDER BY start DESC`,
-    [uuid]
+    "SELECT * FROM punishments WHERE uuid = ? AND type = 'mute' AND active = 1 ORDER BY start DESC",
+    [uuid],
   );
   return rows;
 }
@@ -83,33 +87,31 @@ async function getActiveMutes(uuid) {
 async function getAllActivePunishments() {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT * FROM punishments
-     WHERE active = 1
-     ORDER BY start DESC`
+    'SELECT * FROM punishments WHERE active = 1 ORDER BY start DESC',
   );
   return rows;
 }
 
 /**
- * Fetch player name history from AdvancedBans if available.
+ * Look up a UUID by the most recent known username.
  */
 async function getUuidByUsername(username) {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT uuid FROM player_aliases WHERE name = ? ORDER BY lastSeen DESC LIMIT 1`,
-    [username]
+    'SELECT uuid FROM player_aliases WHERE name = ? ORDER BY lastSeen DESC LIMIT 1',
+    [username],
   );
   return rows.length > 0 ? rows[0].uuid : null;
 }
 
 /**
- * Get the most recent name for a UUID from AdvancedBans.
+ * Look up the most recent name for a UUID.
  */
 async function getUsernameByUuid(uuid) {
   const conn = getPool();
   const [rows] = await conn.query(
-    `SELECT name FROM player_aliases WHERE uuid = ? ORDER BY lastSeen DESC LIMIT 1`,
-    [uuid]
+    'SELECT name FROM player_aliases WHERE uuid = ? ORDER BY lastSeen DESC LIMIT 1',
+    [uuid],
   );
   return rows.length > 0 ? rows[0].name : null;
 }
