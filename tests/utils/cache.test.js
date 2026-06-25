@@ -25,7 +25,9 @@ describe('cache.js', () => {
 
     it('setCachedUUID should store a value retrievable by getCachedUUID', () => {
       cache.setCachedUUID('Steve', 'abc123def456abc123def456abc12345');
-      expect(cache.getCachedUUID('Steve')).toBe('abc123def456abc123def456abc12345');
+      expect(cache.getCachedUUID('Steve')).toBe(
+        'abc123def456abc123def456abc12345',
+      );
     });
 
     it('getCachedUUID should be case-insensitive (lowercased key)', () => {

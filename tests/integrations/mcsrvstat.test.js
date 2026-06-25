@@ -93,8 +93,7 @@ describe('mcsrvstat.js / fetchStatus', () => {
 
     it('should return stale cached result with stale:true on fetch failure when cache is warm', async () => {
       // First call: cache miss → HTTP success → cache set
-      cache.getCachedServerStatus
-        .mockReturnValueOnce(null);
+      cache.getCachedServerStatus.mockReturnValueOnce(null);
       cache.setCachedServerStatus.mockImplementation(() => {});
       mockHttpsResponse(200, {
         ip: '1.2.3.4',
@@ -118,8 +117,8 @@ describe('mcsrvstat.js / fetchStatus', () => {
       });
       cache.getCachedServerStatus
         .mockReset()
-        .mockReturnValueOnce(null)       // top-level: cache miss
-        .mockReturnValue(cachedStatus);  // error handler: stale fallback
+        .mockReturnValueOnce(null) // top-level: cache miss
+        .mockReturnValue(cachedStatus); // error handler: stale fallback
 
       const result = await fetchStatus('play.example.com');
 

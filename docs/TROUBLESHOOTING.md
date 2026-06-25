@@ -260,12 +260,14 @@ their name on Mojang's side.
 ---
 
 ---
+
 **Problem:** Log files are growing too large
 
 **Likely cause:** `LOG_LEVEL` is set to `debug` in a production environment,
 causing every HTTP request and debug message to be written to disk.
 
 **Fix:**
+
 1. Set `LOG_LEVEL=info` in the production `.env` file.
 2. The rotating file transport automatically deletes logs older than 14 days
    and gzips rotated files. If disk space is still tight, check that no
@@ -285,6 +287,7 @@ mismatch (e.g. wrong date format, invalid characters in a Minecraft
 username, or a coordinate outside the world border).
 
 **Fix:**
+
 1. Check the Zod schema for that command in `src/schemas/`. The validation
    error message is returned to the user, so the first error message in
    the schema definition tells you what format is expected.
@@ -305,6 +308,7 @@ high, or pruning failed silently (e.g. the bot lost write permission to the
 `backups/` directory).
 
 **Fix:**
+
 1. Check the bot logs for pruning errors:
    ```bash
    grep -i 'prune\|backup' logs/combined-*.log
@@ -335,6 +339,7 @@ your machine by another service (including a previously running Docker
 container or a local MySQL installation).
 
 **Fix:**
+
 1. Stop the conflicting service or container:
    ```bash
    docker compose down
@@ -346,7 +351,7 @@ container or a local MySQL installation).
    services:
      mysql:
        ports:
-         - "3307:3306"   # host port 3307 → container port 3306
+         - '3307:3306' # host port 3307 → container port 3306
    ```
 
 ---
@@ -358,6 +363,7 @@ This should not happen with the healthcheck configured, but may occur if
 the `start_period` is too short or MySQL initialization fails.
 
 **Fix:**
+
 1. Check MySQL logs:
    ```bash
    docker compose logs mysql
@@ -377,6 +383,7 @@ the `start_period` is too short or MySQL initialization fails.
 be using the production build target instead of the dev target.
 
 **Fix:**
+
 1. Verify the override file is present:
    ```bash
    ls docker-compose.override.yml

@@ -64,7 +64,8 @@ const PAYLOAD_BUILDERS = {
       type: 'advancement',
       username: query.username || 'BuildMaster',
       advancementTitle: query.title || 'Getting Wood',
-      advancementDescription: query.description || 'Punch a tree until a block of wood pops out',
+      advancementDescription:
+        query.description || 'Punch a tree until a block of wood pops out',
       message: query.message || 'Getting Wood',
     };
   },

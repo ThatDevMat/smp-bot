@@ -109,11 +109,17 @@ function init(discordClient) {
           break;
 
         case 'join':
-          await relayMessage('serverLog', playerEventEmbed(payload.username, 'join'));
+          await relayMessage(
+            'serverLog',
+            playerEventEmbed(payload.username, 'join'),
+          );
           break;
 
         case 'leave':
-          await relayMessage('serverLog', playerEventEmbed(payload.username, 'leave'));
+          await relayMessage(
+            'serverLog',
+            playerEventEmbed(payload.username, 'leave'),
+          );
           break;
 
         case 'death':
@@ -125,8 +131,12 @@ function init(discordClient) {
 
         case 'advancement': {
           const advTitle =
-            payload.advancementTitle || payload.advancement || payload.message || 'Unknown Advancement';
-          const advDescription = payload.advancementDescription || payload.description || '';
+            payload.advancementTitle ||
+            payload.advancement ||
+            payload.message ||
+            'Unknown Advancement';
+          const advDescription =
+            payload.advancementDescription || payload.description || '';
           await relayMessage(
             'serverLog',
             advancementEmbed(payload.username, advTitle, advDescription),

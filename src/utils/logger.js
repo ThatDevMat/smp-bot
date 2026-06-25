@@ -57,8 +57,7 @@ const devFormat = combine(
   align(),
   printf(({ timestamp: ts, level, message, ...meta }) => {
     const keys = Object.keys(meta);
-    const metaStr =
-      keys.length > 0 ? ` ${JSON.stringify(meta, null, 0)}` : '';
+    const metaStr = keys.length > 0 ? ` ${JSON.stringify(meta, null, 0)}` : '';
     return `${ts} ${level}: ${message}${metaStr}`;
   }),
 );

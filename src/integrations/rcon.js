@@ -28,7 +28,9 @@ const MC_USERNAME_RE = /^[a-zA-Z0-9_]{1,16}$/;
 
 async function connect() {
   if (!config.rcon.password) {
-    logger.warn('No RCON password configured — RCON commands will be unavailable');
+    logger.warn(
+      'No RCON password configured — RCON commands will be unavailable',
+    );
     return null;
   }
   try {
@@ -37,7 +39,10 @@ async function connect() {
       port: config.rcon.port,
       password: config.rcon.password,
     });
-    logger.info('RCON connected', { host: config.rcon.host, port: config.rcon.port });
+    logger.info('RCON connected', {
+      host: config.rcon.host,
+      port: config.rcon.port,
+    });
     return rconClient;
   } catch (err) {
     logger.warn('RCON connection failed — commands will be unavailable', {

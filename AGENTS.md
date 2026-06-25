@@ -19,36 +19,36 @@ better-sqlite3, mysql2, and rcon-client.
 
 ## 2. Repository Map
 
-| Path                               | Purpose                                                                                      |
-| ---------------------------------- | -------------------------------------------------------------------------------------------- |
-| `src/commands/`                    | 13 slash command handlers, one file per command                                              |
-| `src/events/`                      | discord.js lifecycle event handlers (ready.js, interactionCreate.js)                         |
-| `src/webhooks/`                    | Express router for the DiscordSRV webhook receiver                                           |
-| `src/db/`                          | SQLite schema initialisation and all query helpers                                           |
-| `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                              |
+| Path                               | Purpose                                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `src/commands/`                    | 13 slash command handlers, one file per command                                                     |
+| `src/events/`                      | discord.js lifecycle event handlers (ready.js, interactionCreate.js)                                |
+| `src/webhooks/`                    | Express router for the DiscordSRV webhook receiver                                                  |
+| `src/db/`                          | SQLite schema initialisation and all query helpers                                                  |
+| `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                                     |
 | `src/utils/`                       | Embed builders, permission checks, player UUID resolution, logger, backup, cache, shutdown handlers |
-| **`src/schemas/`**                 | **Zod validation schemas for all command inputs and webhook payloads**                            |
-| `src/config.js`                    | dotenv config loader with `validateConfig()`                                                 |
-| `src/index.js`                     | Entry point — boot sequence, never excluded from lint                                        |
-| `tests/`                           | Jest test files mirroring `src/` structure                                                   |
-| `tests/setup.js`                   | Shared test factories and mocks                                                              |
-| `.github/dependabot.yml`           | Dependabot config for npm and GitHub Actions dependency updates                              |
-| `.github/workflows/ci.yml`         | CI pipeline (lint → test + security audit)                                                   |
-| `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                                                  |
-| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                                        |
-| `.github/ISSUE_TEMPLATE/`          | Bug report and feature request templates                                                     |
-| `docker/`                          | Docker Compose setup: MySQL init script, mock DiscordSRV webhook service                      |
-| `Dockerfile`                       | Multi-stage Dockerfile (deps, dev, production)                                                |
-| `docker-compose.yml`               | Production Compose file (bot + MySQL with healthcheck)                                        |
-| `.dockerignore`                    | Excludes node_modules, .env, coverage, logs, backups from Docker build                        |
-| `docs/`                            | Onboarding, architecture, contributing, integrations, troubleshooting, restore guide         |
-| `backups/`                         | Automated SQLite backup files (gitignored — managed by the backup scheduler)                 |
-| `jest.config.js`                   | Jest config with 80% coverage threshold                                                      |
-| `ecosystem.config.js`              | PM2 process manager config                                                                   |
-| `.eslintrc.json`                   | ESLint rules                                                                                 |
-| `.prettierrc`                      | Prettier formatting configuration                                                            |
-| `.env.example`                     | Template for all required environment variables                                              |
-| `deploy-commands.js`               | Script to register slash commands with the Discord REST API                                  |
+| **`src/schemas/`**                 | **Zod validation schemas for all command inputs and webhook payloads**                              |
+| `src/config.js`                    | dotenv config loader with `validateConfig()`                                                        |
+| `src/index.js`                     | Entry point — boot sequence, never excluded from lint                                               |
+| `tests/`                           | Jest test files mirroring `src/` structure                                                          |
+| `tests/setup.js`                   | Shared test factories and mocks                                                                     |
+| `.github/dependabot.yml`           | Dependabot config for npm and GitHub Actions dependency updates                                     |
+| `.github/workflows/ci.yml`         | CI pipeline (lint → test + security audit)                                                          |
+| `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                                                         |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                                               |
+| `.github/ISSUE_TEMPLATE/`          | Bug report and feature request templates                                                            |
+| `docker/`                          | Docker Compose setup: MySQL init script, mock DiscordSRV webhook service                            |
+| `Dockerfile`                       | Multi-stage Dockerfile (deps, dev, production)                                                      |
+| `docker-compose.yml`               | Production Compose file (bot + MySQL with healthcheck)                                              |
+| `.dockerignore`                    | Excludes node_modules, .env, coverage, logs, backups from Docker build                              |
+| `docs/`                            | Onboarding, architecture, contributing, integrations, troubleshooting, restore guide                |
+| `backups/`                         | Automated SQLite backup files (gitignored — managed by the backup scheduler)                        |
+| `jest.config.js`                   | Jest config with 80% coverage threshold                                                             |
+| `ecosystem.config.js`              | PM2 process manager config                                                                          |
+| `.eslintrc.json`                   | ESLint rules                                                                                        |
+| `.prettierrc`                      | Prettier formatting configuration                                                                   |
+| `.env.example`                     | Template for all required environment variables                                                     |
+| `deploy-commands.js`               | Script to register slash commands with the Discord REST API                                         |
 
 ### Files and directories you must NEVER modify without explicit instruction
 
@@ -98,7 +98,7 @@ These boundaries must never be violated:
 - **Never call node-cache directly — always use the typed helpers in
   `src/utils/cache.js`.**
   _Violation:_ calling `cache.get()` or `cache.set()` outside of
-  `src/utils/cache.js`.  Use `getCachedUUID`, `setCachedUUID`,
+  `src/utils/cache.js`. Use `getCachedUUID`, `setCachedUUID`,
   `invalidateUUIDCache`, `getCachedServerStatus`, or `setCachedServerStatus`
   instead.
 
@@ -106,7 +106,7 @@ These boundaries must never be violated:
   `src/utils/validate.js` using a schema from `src/scheams/`.**
   _Violation:_ calling `interaction.options.getString()` and using the raw
   value without first validating it through `validateInput()` and a Zod
-  schema.  Every command must extract its raw options into a plain object,
+  schema. Every command must extract its raw options into a plain object,
   pass it through `validateInput()`, and use the typed result.
 
 ---
@@ -167,7 +167,7 @@ When adding a new slash command, in addition to the checklist in
    a plain object, pass it through `validateInput()`, and use the validated
    data for the rest of the function.
 3. **Never access `interaction.options` values** that form command input
-   without first validating them through a schema.  Meta-options like
+   without first validating them through a schema. Meta-options like
    `getSubcommand()` are exempt — only actual user input must be validated.
 4. **Add test cases** for both valid and invalid input — invalid input must
    produce an ephemeral error reply and not execute any business logic.

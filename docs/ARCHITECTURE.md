@@ -255,14 +255,14 @@ typed helper functions exported by that module.
 
 ### What is cached and for how long
 
-| Data                      | TTL      | Why this TTL                          |
-| ------------------------- | -------- | ------------------------------------- |
-| Mojang UUID lookups       | 1 hour   | UUIDs rarely change; 1 hour prevents  |
-|                           |          | repeated lookups from exhausting the  |
-|                           |          | 600 req/10 min rate limit             |
-| mcsrvstat.us server status| 30 sec   | Status data changes at most every few |
-|                           |          | seconds; 30 s balances freshness with |
-|                           |          | cache hit rate during bursts          |
+| Data                       | TTL    | Why this TTL                          |
+| -------------------------- | ------ | ------------------------------------- |
+| Mojang UUID lookups        | 1 hour | UUIDs rarely change; 1 hour prevents  |
+|                            |        | repeated lookups from exhausting the  |
+|                            |        | 600 req/10 min rate limit             |
+| mcsrvstat.us server status | 30 sec | Status data changes at most every few |
+|                            |        | seconds; 30 s balances freshness with |
+|                            |        | cache hit rate during bursts          |
 
 ### Stale fallback
 
@@ -275,6 +275,7 @@ users know the data may be outdated rather than seeing an error.
 
 The cache is in-memory only — it is lost when the bot process restarts.
 This is intentional and acceptable because:
+
 - TTLs are short (30 s – 1 h), so the cost of a cold cache is limited to
   a handful of extra API calls after restart
 - Persisting cache to disk would add complexity with negligible benefit
@@ -297,15 +298,15 @@ in `src/schemas/` (schema definitions) and `src/utils/validate.js` (the
 
 ### Where schemas live
 
-| File                       | Validates                          |
-| -------------------------- | ---------------------------------- |
-| `src/schemas/common.js`    | Reusable primitives (MinecraftUsername, UUID, Dimension, Coordinate, FutureDate, TimeString, Timezone, DiscordSnowflake) |
-| `src/schemas/events.js`    | `/event create` and `/event cancel` |
-| `src/schemas/players.js`   | `/register`, `/whois`, `/whitelist` |
-| `src/schemas/moderation.js`| `/warn`, `/checkbans`, `/history`, `/warnings` |
-| `src/schemas/pois.js`      | `/poi add` and `/poi remove`       |
-| `src/schemas/season.js`    | `/season set`                      |
-| `src/schemas/webhooks.js`  | DiscordSRV webhook payloads (discriminated union on `type`) |
+| File                        | Validates                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `src/schemas/common.js`     | Reusable primitives (MinecraftUsername, UUID, Dimension, Coordinate, FutureDate, TimeString, Timezone, DiscordSnowflake) |
+| `src/schemas/events.js`     | `/event create` and `/event cancel`                                                                                      |
+| `src/schemas/players.js`    | `/register`, `/whois`, `/whitelist`                                                                                      |
+| `src/schemas/moderation.js` | `/warn`, `/checkbans`, `/history`, `/warnings`                                                                           |
+| `src/schemas/pois.js`       | `/poi add` and `/poi remove`                                                                                             |
+| `src/schemas/season.js`     | `/season set`                                                                                                            |
+| `src/schemas/webhooks.js`   | DiscordSRV webhook payloads (discriminated union on `type`)                                                              |
 
 ### The validateInput() pattern
 
@@ -320,6 +321,7 @@ raw input object → validateInput(schema, raw) → typed output
 ```
 
 Key rules:
+
 - `validateInput()` never throws a raw `ZodError` — it always wraps it in
   a `ValidationError` that carries both a user-friendly message (`userMessage`)
   and the full Zod error object (`zodError` for logging).

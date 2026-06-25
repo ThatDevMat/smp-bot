@@ -115,10 +115,10 @@ async function handleCreate(interaction) {
   try {
     input = validateInput(CreateEventInput, rawInput);
   } catch (err) {
-      return interaction.reply({
-        content: `\u274C ${err.userMessage}`,
-        ephemeral: true,
-      });
+    return interaction.reply({
+      content: `\u274C ${err.userMessage}`,
+      ephemeral: true,
+    });
   }
 
   if (!requireStaff(interaction)) return;

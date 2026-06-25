@@ -118,7 +118,12 @@ describe('POST /srvchat — chat events', () => {
     const res = await request(getApp())
       .post('/srvchat')
       .set('x-webhook-secret', 'test-webhook-secret')
-      .send({ channel: 'global', type: 'chat', username: 'Alex', message: 'Hey' });
+      .send({
+        channel: 'global',
+        type: 'chat',
+        username: 'Alex',
+        message: 'Hey',
+      });
 
     expect(res.status).toBe(200);
   });

@@ -232,7 +232,9 @@ describe('Timezone', () => {
 
 describe('DiscordSnowflake', () => {
   it('should accept a valid snowflake', () => {
-    expect(DiscordSnowflake.parse('123456789012345678')).toBe('123456789012345678');
+    expect(DiscordSnowflake.parse('123456789012345678')).toBe(
+      '123456789012345678',
+    );
   });
 
   it('should reject a string that is too short', () => {

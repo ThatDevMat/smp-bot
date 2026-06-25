@@ -501,9 +501,10 @@ function backupResultEmbed({ fileName, sizeBytes, durationMs }) {
       { name: 'Size', value: formatBytes(sizeBytes), inline: true },
       {
         name: 'Duration',
-        value: durationMs >= 1000
-          ? `${(durationMs / 1000).toFixed(1)}s`
-          : `${durationMs}ms`,
+        value:
+          durationMs >= 1000
+            ? `${(durationMs / 1000).toFixed(1)}s`
+            : `${durationMs}ms`,
         inline: true,
       },
     )

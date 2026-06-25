@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   bot:
@@ -31,14 +31,14 @@ services:
         - -h
         - localhost
         - -u
-        - "${MYSQL_USER}"
-        - "-p${MYSQL_PASSWORD}"
+        - '${MYSQL_USER}'
+        - '-p${MYSQL_PASSWORD}'
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 30s
     ports:
-      - "3306:3306"
+      - '3306:3306'
     networks:
       - botnet
 

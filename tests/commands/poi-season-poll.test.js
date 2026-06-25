@@ -62,7 +62,10 @@ describe('/poi', () => {
       interaction.options._setOption('y', 64);
       interaction.options._setOption('z', 0);
       interaction.options._setOption('dimension', 'overworld');
-      interaction.options._setOption('description', 'Town center at the world origin');
+      interaction.options._setOption(
+        'description',
+        'Town center at the world origin',
+      );
       db.getPoiByName.mockReturnValue({ name: 'Spawn Village' });
 
       await poiCommand.execute(interaction);

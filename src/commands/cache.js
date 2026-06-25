@@ -16,9 +16,7 @@ module.exports = {
     .setName('cache')
     .setDescription('View or manage the in-memory API cache')
     .addSubcommand((sub) =>
-      sub
-        .setName('stats')
-        .setDescription('Show current cache statistics'),
+      sub.setName('stats').setDescription('Show current cache statistics'),
     )
     .addSubcommand((sub) =>
       sub

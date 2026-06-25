@@ -19,14 +19,14 @@ A few things to know before you dive in:
 
 ## Prerequisites
 
-| Tool                            | Minimum Version | Install Link                                                            |
-| ------------------------------- | --------------- | ----------------------------------------------------------------------- |
+| Tool                            | Minimum Version | Install Link                                                                          |
+| ------------------------------- | --------------- | ------------------------------------------------------------------------------------- |
 | Docker Desktop                  | —               | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
-| Node.js                         | 20.x            | [nodejs.org](https://nodejs.org/) (only needed for Track B)             |
-| npm                             | 10.x            | (ships with Node.js)                                                    |
-| Git                             | Any recent      | [git-scm.com](https://git-scm.com/)                                     |
-| Discord Application + Bot Token | —               | [Discord Developer Portal](https://discord.com/developers/applications) |
-| PM2 (production only)           | 5.x             | `npm install -g pm2`                                                    |
+| Node.js                         | 20.x            | [nodejs.org](https://nodejs.org/) (only needed for Track B)                           |
+| npm                             | 10.x            | (ships with Node.js)                                                                  |
+| Git                             | Any recent      | [git-scm.com](https://git-scm.com/)                                                   |
+| Discord Application + Bot Token | —               | [Discord Developer Portal](https://discord.com/developers/applications)               |
+| PM2 (production only)           | 5.x             | `npm install -g pm2`                                                                  |
 
 You also need **access to a Minecraft server** if you want to test the
 DiscordSRV webhook receiver, RCON commands, or AdvancedBans lookups. For local
@@ -100,11 +100,11 @@ docker compose up --build
 
 This starts three containers:
 
-| Container       | What it does                                                     | Access                   |
-| --------------- | ---------------------------------------------------------------- | ------------------------ |
-| **bot**         | The Discord bot itself (hot-reload enabled — restarts on changes) | —                        |
-| **mysql**       | MySQL 8.0 pre-loaded with AdvancedBans tables and seed data       | `localhost:3306`         |
-| **mock-srvchat**| Web UI for firing simulated DiscordSRV events at the bot          | `http://localhost:4000`  |
+| Container        | What it does                                                      | Access                  |
+| ---------------- | ----------------------------------------------------------------- | ----------------------- |
+| **bot**          | The Discord bot itself (hot-reload enabled — restarts on changes) | —                       |
+| **mysql**        | MySQL 8.0 pre-loaded with AdvancedBans tables and seed data       | `localhost:3306`        |
+| **mock-srvchat** | Web UI for firing simulated DiscordSRV events at the bot          | `http://localhost:4000` |
 
 Wait for the logs to show `Bot logged in` before proceeding.
 
@@ -199,6 +199,7 @@ local time. A backup also runs immediately when the bot starts, so there is
 always a fresh backup after a deployment.
 
 Backup files are written to the `backups/` directory at the project root:
+
 ```
 backups/
   backup-2026-01-15T03-00-00.db.gz
@@ -206,6 +207,7 @@ backups/
 ```
 
 **Retention:**
+
 - The 30 most recent daily backups are always kept
 - Sunday (weekly) backups beyond the daily window are kept, up to 4
 

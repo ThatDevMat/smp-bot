@@ -13,8 +13,14 @@ const z = require('zod');
  */
 const MinecraftUsername = z
   .string()
-  .min(3, 'Minecraft usernames can only contain letters, numbers, and underscores (3\u201316 characters)')
-  .max(16, 'Minecraft usernames can only contain letters, numbers, and underscores (3\u201316 characters)')
+  .min(
+    3,
+    'Minecraft usernames can only contain letters, numbers, and underscores (3\u201316 characters)',
+  )
+  .max(
+    16,
+    'Minecraft usernames can only contain letters, numbers, and underscores (3\u201316 characters)',
+  )
   .regex(
     /^[a-zA-Z0-9_]+$/,
     'Minecraft usernames can only contain letters, numbers, and underscores (3\u201316 characters)',
@@ -33,12 +39,9 @@ const MinecraftUUID = z
  */
 const Dimension = z
   .string({ required_error: 'Dimension is required' })
-  .refine(
-    (val) => ['overworld', 'nether', 'end', 'the_end'].includes(val),
-    {
-      message: 'Dimension must be overworld, nether, or end',
-    },
-  )
+  .refine((val) => ['overworld', 'nether', 'end', 'the_end'].includes(val), {
+    message: 'Dimension must be overworld, nether, or end',
+  })
   .transform((val) => (val === 'end' ? 'the_end' : val));
 
 /**
@@ -70,30 +73,25 @@ const FutureDate = z
  */
 const TimeString = z
   .string({ required_error: 'Time is required' })
-  .regex(
-    /^([01]\d|2[0-3]):[0-5]\d$/,
-    'Time must be in HH:MM 24-hour format',
-  );
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be in HH:MM 24-hour format');
 
 /**
  * IANA timezone string — validated against the Intl API.
  */
-const Timezone = z
-  .string({ required_error: 'Timezone is required' })
-  .refine(
-    (val) => {
-      try {
-        Intl.DateTimeFormat(undefined, { timeZone: val });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    {
-      message:
-        'Invalid timezone. Use an IANA timezone name such as America/New_York or Europe/London',
-    },
-  );
+const Timezone = z.string({ required_error: 'Timezone is required' }).refine(
+  (val) => {
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: val });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  {
+    message:
+      'Invalid timezone. Use an IANA timezone name such as America/New_York or Europe/London',
+  },
+);
 
 /**
  * Discord Snowflake — 17–19 digit numeric ID.

@@ -20,7 +20,9 @@ const config = {
     guildId: process.env.GUILD_ID,
   },
 
-  logLevel: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+  logLevel:
+    process.env.LOG_LEVEL ||
+    (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
 
   rcon: {
     host: process.env.RCON_HOST || '127.0.0.1',
