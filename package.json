@@ -19,7 +19,7 @@
     "bot",
     "discord.js"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "better-sqlite3": "^11.7.0",
     "discord.js": "^14.18.0",
