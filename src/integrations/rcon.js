@@ -12,6 +12,7 @@
 
 const { Rcon } = require('rcon-client');
 const { config } = require('../config');
+const logger = require('../utils/logger');
 
 let rconClient = null;
 
@@ -27,9 +28,7 @@ const MC_USERNAME_RE = /^[a-zA-Z0-9_]{1,16}$/;
 
 async function connect() {
   if (!config.rcon.password) {
-    console.warn(
-      '[RCON] No password configured \u2014 RCON commands will be unavailable.',
-    );
+    logger.warn('No RCON password configured — RCON commands will be unavailable');
     return null;
   }
   try {
@@ -38,12 +37,14 @@ async function connect() {
       port: config.rcon.port,
       password: config.rcon.password,
     });
-    console.log('[RCON] Connected successfully.');
+    logger.info('RCON connected', { host: config.rcon.host, port: config.rcon.port });
     return rconClient;
   } catch (err) {
-    console.warn(
-      `[RCON] Connection failed: ${err.message}. RCON commands will be unavailable.`,
-    );
+    logger.warn('RCON connection failed — commands will be unavailable', {
+      host: config.rcon.host,
+      error: err.message,
+      stack: err.stack,
+    });
     return null;
   }
 }

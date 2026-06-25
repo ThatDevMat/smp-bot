@@ -9,6 +9,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { poiRegisteredEmbed, poiListEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 const POIS_PER_PAGE = 5;
 
@@ -74,10 +75,12 @@ module.exports = {
         await handleRemove(interaction);
       }
     } catch (err) {
-      console.error(
-        `[POI/${subcommand}] Error for ${interaction.user.tag}:`,
-        err.message,
-      );
+      logger.error('POI command error', {
+        subcommand,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '\u274C An error occurred while managing POIs.',

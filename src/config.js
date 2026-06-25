@@ -11,12 +11,16 @@
 
 require('dotenv').config();
 
+const logger = require('../utils/logger');
+
 const config = {
   bot: {
     token: process.env.BOT_TOKEN,
     clientId: process.env.CLIENT_ID,
     guildId: process.env.GUILD_ID,
   },
+
+  logLevel: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
 
   rcon: {
     host: process.env.RCON_HOST || '127.0.0.1',
@@ -58,10 +62,10 @@ function validateConfig() {
   const missing = required.filter(([, val]) => !val).map(([key]) => key);
 
   if (missing.length > 0) {
-    console.error(
-      `Missing required environment variables: ${missing.join(', ')}`,
-    );
-    console.error('Copy .env.example to .env and fill in your values.');
+    logger.error('Missing required environment variables', {
+      missing: missing.join(', '),
+    });
+    logger.error('Copy .env.example to .env and fill in your values.');
     process.exit(1);
   }
 }

@@ -12,6 +12,9 @@ module.exports = {
   testMatch: ['**/tests/**/*.test.js'],
   setupFiles: ['./tests/setup.js'],
   clearMocks: true,
+  moduleNameMapper: {
+    '^(\\.\\./)+utils/logger$': '<rootDir>/src/utils/__mocks__/logger.js',
+  },
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/index.js',

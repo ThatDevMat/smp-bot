@@ -10,9 +10,8 @@
  *   6. Start the DiscordSRV webhook (Express) server.
  *   7. Log in to Discord.
  *   8. Start the cron-based event reminder scheduler.
- *
- * Global error handlers catch unhandled promise rejections and
- * forward them to the logging system so the bot never silently crashes.
+ *   9. Register graceful shutdown handlers.
+ *  10. Signal PM2 that the process is ready.
  */
 
 require('dotenv').config();
@@ -23,23 +22,12 @@ const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const cron = require('node-cron');
 
 const { config, validateConfig } = require('./config');
+const logger = require('./utils/logger');
 const rcon = require('./integrations/rcon');
+const advancedbans = require('./integrations/advancedbans');
 const db = require('./db');
 const discordsrv = require('./webhooks/discordsrv');
-
-/* ------------------------------------------------------------------ */
-/*  Global error handlers                                              */
-/* ------------------------------------------------------------------ */
-
-process.on('unhandledRejection', (reason) => {
-  console.error('[Process] Unhandled promise rejection:', reason);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('[Process] Uncaught exception:', err);
-  // Let the process exit naturally — the PM2 / Docker supervisor
-  // will restart it.
-});
+const { registerShutdownHandlers } = require('./utils/shutdown');
 
 /* ------------------------------------------------------------------ */
 /*  Validate environment                                               */
@@ -75,9 +63,9 @@ for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
   if ('data' in command && 'execute' in command) {
     client.commands.set(command.data.name, command);
-    console.log(`[Commands] Loaded /${command.data.name}`);
+    logger.info('Command loaded', { command: command.data.name });
   } else {
-    console.warn(`[Commands] Skipped ${file}: missing "data" or "execute"`);
+    logger.warn('Command file skipped — missing "data" or "execute"', { file });
   }
 }
 
@@ -97,12 +85,14 @@ for (const file of eventFiles) {
   } else {
     client.on(event.name, (...args) => event.execute(...args));
   }
-  console.log(`[Events] Loaded ${event.name}`);
+  logger.info('Event handler loaded', { event: event.name });
 }
 
 /* ------------------------------------------------------------------ */
 /*  Startup                                                            */
 /* ------------------------------------------------------------------ */
+
+let httpServer;
 
 (async () => {
   try {
@@ -110,7 +100,7 @@ for (const file of eventFiles) {
     await rcon.connect();
 
     // Express webhook receiver.
-    discordsrv.init(client);
+    httpServer = discordsrv.init(client);
 
     // Discord login.
     await client.login(config.bot.token);
@@ -119,11 +109,25 @@ for (const file of eventFiles) {
     cron.schedule('*/30 * * * *', () => {
       checkEventReminders(client);
     });
+    logger.info('Event reminder scheduler started', { interval: '30min' });
 
-    console.log('[Cron] Event reminder scheduler started (every 30min)');
-    console.log('[Bot] Initialization complete.');
+    logger.info('Bot initialization complete');
+
+    // Graceful shutdown — pass live instances.
+    registerShutdownHandlers({
+      httpServer,
+      discordClient: client,
+      rcon,
+      mysql: advancedbans,
+      sqlite: db.getDb(),
+    });
+
+    // Signal PM2 that the process is ready.
+    if (process.send) {
+      process.send('ready');
+    }
   } catch (err) {
-    console.error('[Bot] Startup error:', err);
+    logger.error('Bot startup error', { error: err.message, stack: err.stack });
     process.exit(1);
   }
 })();
@@ -176,8 +180,12 @@ async function checkEventReminders(discordClient) {
         sentReminders.add(key);
         await eventsChannel.send({
           content:
-            `\u23F0 **Reminder:** "${event.name}" is starting in about **24 hours** ` +
+            `\\u23F0 **Reminder:** "${event.name}" is starting in about **24 hours** ` +
             `(${event.event_date} at ${event.event_time} ${event.timezone})!`,
+        });
+        logger.info('Sent 24h event reminder', {
+          eventId: event.id,
+          eventName: event.name,
         });
       }
     }
@@ -190,24 +198,15 @@ async function checkEventReminders(discordClient) {
         const rsvpCount = db.getRsvpCount(event.id);
         await eventsChannel.send({
           content:
-            `\u{1F514} **Starting Soon:** "${event.name}" is starting in about **1 hour**! ` +
+            `\\u{1F514} **Starting Soon:** "${event.name}" is starting in about **1 hour**! ` +
             `(${rsvpCount} attending)`,
+        });
+        logger.info('Sent 1h event reminder', {
+          eventId: event.id,
+          eventName: event.name,
+          rsvpCount,
         });
       }
     }
   }
 }
-
-/* ------------------------------------------------------------------ */
-/*  Graceful shutdown                                                  */
-/* ------------------------------------------------------------------ */
-
-function shutdown(signal) {
-  console.log(`\n[Bot] ${signal} received. Shutting down...`);
-  rcon.disconnect().catch(() => {});
-  client.destroy();
-  process.exit(0);
-}
-
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));

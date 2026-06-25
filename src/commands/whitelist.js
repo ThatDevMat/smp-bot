@@ -9,6 +9,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const rcon = require('../integrations/rcon');
 const { requireStaff } = require('../utils/permissions');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -56,9 +57,13 @@ module.exports = {
         content: `\u2705 \`${username}\` ${subcommand === 'add' ? 'added to' : 'removed from'} the whitelist.\n\`\`\`${response}\`\`\``,
       });
     } catch (err) {
-      console.error(
-        `[Whitelist/${subcommand}] Error for ${interaction.user.tag}: ${err.message}`,
-      );
+      logger.error('Whitelist command error', {
+        subcommand,
+        username,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       await interaction.editReply({
         content:
           '\u274C Could not modify the whitelist. Check RCON connection and try again.',

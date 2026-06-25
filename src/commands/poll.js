@@ -9,6 +9,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { pollEmbed } = require('../utils/embeds');
 const { config } = require('../config');
+const logger = require('../utils/logger');
 
 const NUMBER_EMOJIS = [
   '1\uFE0F\u20E3',
@@ -93,7 +94,11 @@ module.exports = {
         await pollMsg.react(NUMBER_EMOJIS[i]);
       }
     } catch (err) {
-      console.error(`[Poll] Error for ${interaction.user.tag}:`, err.message);
+      logger.error('Poll command error', {
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '\u274C Could not create the poll. Check bot permissions.',

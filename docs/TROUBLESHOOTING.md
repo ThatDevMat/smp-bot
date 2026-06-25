@@ -255,6 +255,25 @@ their name on Mojang's side.
 
 ---
 
+**Problem:** Log files are growing too large
+
+**Likely cause:** `LOG_LEVEL` is set to `debug` in a production environment,
+causing every HTTP request and debug message to be written to disk.
+
+**Fix:**
+
+1. Set `LOG_LEVEL=info` in the production `.env` file.
+2. The rotating file transport automatically deletes logs older than 14 days
+   and gzips rotated files. If disk space is still tight, check that no
+   external process is reading/writing the log files while the bot is running.
+3. To verify current log sizes on the server:
+   ```bash
+   du -sh logs/
+   ls -la logs/
+   ```
+
+---
+
 ## Still Stuck?
 
 If none of the above solves your problem:

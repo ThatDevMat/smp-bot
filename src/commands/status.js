@@ -11,6 +11,7 @@ const rcon = require('../integrations/rcon');
 const { fetchStatus } = require('../integrations/mcsrvstat');
 const { statusEmbed } = require('../utils/embeds');
 const { config } = require('../config');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -65,25 +66,26 @@ module.exports = {
           }
         }
       } catch {
-        console.warn('[Status] mcsrvstat.us supplement failed (non-fatal).');
+        logger.debug('mcsrvstat.us supplement failed (non-fatal)');
       }
 
       embed.setTimestamp();
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
       // RCON failed — full fallback to public API.
-      console.warn(
-        `[Status] RCON failed, falling back to mcsrvstat.us: ${err.message}`,
-      );
+      logger.warn('RCON status failed, falling back to mcsrvstat.us', {
+        error: err.message,
+      });
       try {
         const mcsrvData = await fetchStatus(config.rcon.host);
         const embed = statusEmbed(mcsrvData);
         await interaction.editReply({ embeds: [embed] });
       } catch (fallbackErr) {
-        console.error(
-          '[Status] Both RCON and mcsrvstat.us failed:',
-          fallbackErr.message,
-        );
+        logger.error('Both RCON and mcsrvstat.us failed', {
+          rconError: err.message,
+          fallbackError: fallbackErr.message,
+          stack: fallbackErr.stack,
+        });
         await interaction.editReply({
           content:
             '\u274C Could not fetch server status. Both RCON and the status API are unreachable.',

@@ -9,6 +9,7 @@ const advancedbans = require('../integrations/advancedbans');
 const { requireStaff } = require('../utils/permissions');
 const { resolvePlayer } = require('../utils/playerResolver');
 const { punishmentHistoryEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -46,9 +47,12 @@ module.exports = {
       const embed = punishmentHistoryEmbed(player.username, history);
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
-      console.error(
-        `[History] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
-      );
+      logger.error('History query failed', {
+        player: input,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       await interaction.editReply({
         content:
           '\u274C Could not query the punishment database. Is the AdvancedBans MySQL server reachable?',

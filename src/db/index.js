@@ -228,6 +228,16 @@ function setSeason({ seasonNumber, startDate, seed }) {
     .run(seasonNumber, startDate, seed);
 }
 
+/**
+ * Close the SQLite database connection.
+ */
+function closeDb() {
+  if (db) {
+    db.close();
+    db = null;
+  }
+}
+
 module.exports = {
   getDb,
   createEvent,
@@ -248,4 +258,5 @@ module.exports = {
   removePoi,
   getCurrentSeason,
   setSeason,
+  closeDb,
 };

@@ -14,7 +14,9 @@
  */
 
 const express = require('express');
+const morgan = require('morgan');
 const { config } = require('../config');
+const logger = require('../utils/logger');
 const {
   chatMessageEmbed,
   playerEventEmbed,
@@ -36,11 +38,19 @@ function init(discordClient) {
 
   app.use(express.json({ limit: '100kb' }));
 
+  // HTTP request logging via Morgan piped through Winston at 'http' level.
+  app.use(
+    morgan(':method :url :status :response-time ms - :remote-addr', {
+      stream: {
+        write: (message) => logger.http(message.trim()),
+      },
+    }),
+  );
+
   // Warn operators if the webhook secret is left empty.
   if (!config.webhook.secret) {
-    console.warn(
-      '[Webhook] WEBHOOK_SECRET is not set — anyone who knows your ' +
-        'server address can POST to /srvchat. Set it in .env to restrict access.',
+    logger.warn(
+      'WEBHOOK_SECRET is not set — anyone who knows your server address can POST to /srvchat',
     );
   }
 
@@ -130,15 +140,23 @@ function init(discordClient) {
       res.json({ status: 'ok' });
     } catch (err) {
       // Log the full error internally but never expose details to callers.
-      console.error('[Webhook] Error processing payload:', err);
+      logger.error('DiscordSRV webhook error processing payload', {
+        error: err.message,
+        stack: err.stack,
+      });
       res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   const port = config.webhook.port || 3000;
-  app.listen(port, () => {
-    console.log(`[Webhook] DiscordSRV receiver listening on port ${port}`);
+  const server = app.listen(port, () => {
+    logger.info('DiscordSRV webhook receiver started', {
+      port,
+      secretConfigured: !!config.webhook.secret,
+    });
   });
+
+  return server;
 }
 
 /**
@@ -151,8 +169,8 @@ async function relayMessage(channelKey, embed) {
     // Not configured — this is normal if the operator only uses a subset
     // of channels, so log at debug level (info for now, but could be
     // moved to debug in production).
-    console.info(
-      `[Webhook] Channel "${channelKey}" not configured \u2014 skipping message.`,
+    logger.info(
+      `DiscordSRV channel "${channelKey}" not configured — skipping message`,
     );
     return;
   }
@@ -163,9 +181,11 @@ async function relayMessage(channelKey, embed) {
       await channel.send({ embeds: [embed] });
     }
   } catch (err) {
-    console.error(
-      `[Webhook] Failed to send to channel ${channelId}: ${err.message}`,
-    );
+    logger.error('Failed to send webhook message to Discord channel', {
+      channelId,
+      error: err.message,
+      stack: err.stack,
+    });
   }
 }
 

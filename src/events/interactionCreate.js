@@ -12,6 +12,7 @@
 
 const { Events } = require('discord.js');
 const db = require('../db');
+const logger = require('../utils/logger');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -29,19 +30,22 @@ module.exports = {
 
     const command = interaction.client.commands.get(interaction.commandName);
     if (!command) {
-      console.error(
-        `No command matching "${interaction.commandName}" was found.`,
-      );
+      logger.warn('Unknown command invoked', {
+        commandName: interaction.commandName,
+        userId: interaction.user.id,
+      });
       return;
     }
 
     try {
       await command.execute(interaction);
     } catch (error) {
-      console.error(
-        `Error executing /${interaction.commandName} (user ${interaction.user.tag}):`,
-        error,
-      );
+      logger.error('Command execution error', {
+        command: interaction.commandName,
+        userId: interaction.user.tag,
+        error: error.message,
+        stack: error.stack,
+      });
 
       const message = '\u274C An error occurred while executing this command.';
       if (interaction.replied || interaction.deferred) {

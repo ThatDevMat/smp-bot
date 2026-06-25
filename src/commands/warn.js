@@ -11,6 +11,7 @@ const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { resolvePlayer } = require('../utils/playerResolver');
 const { warningIssuedEmbed, warningDmEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -75,15 +76,19 @@ module.exports = {
           }
         } catch (dmErr) {
           // DM can fail if the user has DMs disabled or the bot is blocked.
-          console.warn(
-            `[Warn] Could not DM user ${registration.discord_id}: ${dmErr.message}`,
-          );
+          logger.warn('Could not DM user about warning', {
+            discordId: registration.discord_id,
+            error: dmErr.message,
+          });
         }
       }
     } catch (err) {
-      console.error(
-        `[Warn] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
-      );
+      logger.error('Warn command error', {
+        player: input,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       await interaction.editReply({
         content: '\u274C An error occurred while issuing the warning.',
       });

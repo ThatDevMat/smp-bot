@@ -9,6 +9,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { seasonInfoEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -51,10 +52,12 @@ module.exports = {
         await handleSet(interaction);
       }
     } catch (err) {
-      console.error(
-        `[Season/${subcommand}] Error for ${interaction.user.tag}:`,
-        err.message,
-      );
+      logger.error('Season command error', {
+        subcommand,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '\u274C An error occurred while managing season data.',

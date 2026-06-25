@@ -9,6 +9,7 @@ const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { resolvePlayer } = require('../utils/playerResolver');
 const { localWarningsEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -46,9 +47,12 @@ module.exports = {
       const embed = localWarningsEmbed(player.username, warnings);
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
-      console.error(
-        `[Warnings] Error for ${input} (user ${interaction.user.tag}): ${err.message}`,
-      );
+      logger.error('Warnings lookup failed', {
+        player: input,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       await interaction.editReply({
         content: '\u274C An error occurred while looking up warnings.',
       });

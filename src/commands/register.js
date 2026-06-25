@@ -10,6 +10,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
 const mojang = require('../integrations/mojang');
 const { registrationEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -43,10 +44,12 @@ module.exports = {
       const embed = registrationEmbed(profile, interaction.user.id);
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
-      console.error(
-        `[Register] Mojang API error for ${username}:`,
-        err.message,
-      );
+      logger.error('Mojang API error during registration', {
+        username,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       await interaction.editReply({
         content:
           '\u274C Could not verify your Minecraft username right now. ' +

@@ -94,6 +94,14 @@ Open `.env` in your editor. Here is what every variable does:
 - **`CHANNEL_POLLS`** — Channel where polls are posted.
 - **`STAFF_ROLE_IDS`** — Comma-separated list of Discord role IDs that
   have permission to use staff-only commands.
+- **`LOG_LEVEL`** — Log verbosity. Set to `debug` during development
+  (colorized, human-readable output) or `info` in production (JSON
+  output for log aggregators). Defaults to `debug` in development and
+  `info` in production.
+
+Log files are written to `logs/combined-%DATE%.log` (all levels) and
+`logs/error-%DATE%.log` (errors only), rotated daily with 14-day retention.
+The `logs/` directory is gitignored.
 
 ### 3. The SQLite database
 

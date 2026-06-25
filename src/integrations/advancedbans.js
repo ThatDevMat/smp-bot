@@ -116,6 +116,16 @@ async function getUsernameByUuid(uuid) {
   return rows.length > 0 ? rows[0].name : null;
 }
 
+/**
+ * Close the MySQL connection pool.
+ */
+async function close() {
+  if (pool) {
+    await pool.end();
+    pool = null;
+  }
+}
+
 module.exports = {
   getActivePunishments,
   getPunishmentHistory,
@@ -124,4 +134,5 @@ module.exports = {
   getAllActivePunishments,
   getUuidByUsername,
   getUsernameByUuid,
+  close,
 };

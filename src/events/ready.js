@@ -5,12 +5,13 @@
  */
 
 const { Events } = require('discord.js');
+const logger = require('../utils/logger');
 
 module.exports = {
   name: Events.ClientReady,
   once: true,
   execute(client) {
-    console.log(`\u2705 Bot logged in as ${client.user.tag}`);
+    logger.info('Bot logged in', { userTag: client.user.tag });
     client.user.setActivity('Minecraft SMP', { type: 'PLAYING' });
   },
 };

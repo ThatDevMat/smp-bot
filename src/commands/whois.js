@@ -7,6 +7,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
 const { whoisEmbed } = require('../utils/embeds');
+const logger = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -37,7 +38,12 @@ module.exports = {
       const embed = whoisEmbed(registration);
       await interaction.reply({ embeds: [embed] });
     } catch (err) {
-      console.error(`[Whois] Lookup error for ${target.tag}:`, err.message);
+      logger.error('Whois lookup error', {
+        targetId: target.id,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       await interaction.reply({
         content: '\u274C An error occurred while looking up that user.',
         ephemeral: true,

@@ -270,6 +270,8 @@ Reuse these — do not reinvent them:
   that use `new Promise`)
 - Descriptive variable and function names — no single-letter names outside
   of loop indices (`i`, `j` are acceptable there)
+- Never use `console.log`, `console.warn`, or `console.error`. Always import
+  and use the shared logger from `src/utils/logger.js`.
 
 ESLint and Prettier are enforced in CI. Run `npm run lint` before completing
 any task — it must produce zero errors.
@@ -442,6 +444,7 @@ instruction in the current task:
 - Change the Jest coverage threshold in `jest.config.js`
 - Alter the PM2 ecosystem config without confirming the production
   deployment impact
+- Add a second logger instance — always import `src/utils/logger.js`
 
 ---
 

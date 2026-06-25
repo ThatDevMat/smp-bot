@@ -16,6 +16,7 @@ const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { eventAnnouncementEmbed, eventListEmbed } = require('../utils/embeds');
 const { config } = require('../config');
+const logger = require('../utils/logger');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -80,10 +81,12 @@ module.exports = {
         await handleCancel(interaction);
       }
     } catch (err) {
-      console.error(
-        `[Event/${subcommand}] Error for ${interaction.user.tag}:`,
-        err.message,
-      );
+      logger.error('Event command error', {
+        subcommand,
+        userId: interaction.user.id,
+        error: err.message,
+        stack: err.stack,
+      });
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content:
