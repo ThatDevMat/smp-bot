@@ -2,7 +2,7 @@
  * /season — View or set SMP season information.
  *
  * Subcommands: info (public), set (staff only).
- * Season data is stored in SQLite.
+ * Season data is stored in SQLite.  Input validated through Zod.
  */
 
 const { SlashCommandBuilder } = require('discord.js');
@@ -10,8 +10,9 @@ const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { seasonInfoEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
+const { validateInput } = require('../utils/validate');
+const { SetSeasonInput } = require('../schemas/season');
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 module.exports = {
@@ -90,23 +91,33 @@ async function handleInfo(interaction) {
 }
 
 async function handleSet(interaction) {
-  if (!requireStaff(interaction)) return;
+  // 1. Validate input.
+  const rawInput = {
+    number: interaction.options.getInteger('number'),
+    startDate: interaction.options.getString('start_date'),
+    seed: interaction.options.getString('seed') || null,
+  };
 
-  const number = interaction.options.getInteger('number');
-  const startDate = interaction.options.getString('start_date');
-  const seed = interaction.options.getString('seed') || null;
-
-  if (!DATE_RE.test(startDate)) {
+  let input;
+  try {
+    input = validateInput(SetSeasonInput, rawInput);
+  } catch (err) {
     return interaction.reply({
-      content: '\u274C Start date must be in YYYY-MM-DD format.',
+      content: `\u274C ${err.userMessage}`,
       ephemeral: true,
     });
   }
 
-  db.setSeason({ seasonNumber: number, startDate, seed });
+  if (!requireStaff(interaction)) return;
+
+  db.setSeason({
+    seasonNumber: input.number,
+    startDate: input.startDate,
+    seed: input.seed,
+  });
 
   await interaction.reply({
-    content: `\u2705 Season ${number} set (start: ${startDate}${seed ? `, seed: \`${seed}\`` : ''}).`,
+    content: `\u2705 Season ${input.number} set (start: ${input.startDate}${input.seed ? `, seed: \`${input.seed}\`` : ''}).`,
     ephemeral: true,
   });
 }

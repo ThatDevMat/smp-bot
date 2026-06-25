@@ -278,6 +278,26 @@ causing every HTTP request and debug message to be written to disk.
 
 ---
 
+**Problem:** A slash command returns a generic error for valid-looking input
+
+**Likely cause:** The input is failing Zod validation — likely a format
+mismatch (e.g. wrong date format, invalid characters in a Minecraft
+username, or a coordinate outside the world border).
+
+**Fix:**
+1. Check the Zod schema for that command in `src/schemas/`. The validation
+   error message is returned to the user, so the first error message in
+   the schema definition tells you what format is expected.
+2. Run the input through the schema manually in a Node REPL to see the
+   exact validation error:
+   ```bash
+   node -e "const z = require('zod'); const s = require('./src/schemas/events'); console.log(s.CreateEventInput.safeParse({ name: 'X', date: 'bad' }))"
+   ```
+3. If the error message is unclear, check the `logger.debug` output — the
+   full Zod issues array is logged at debug level when validation fails.
+
+---
+
 **Problem:** `backups/` is filling up disk space
 
 **Likely cause:** `BACKUP_RETAIN_DAILY` or `BACKUP_RETAIN_WEEKLY` set too

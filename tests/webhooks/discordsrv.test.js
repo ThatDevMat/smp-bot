@@ -110,7 +110,17 @@ describe('POST /srvchat — chat events', () => {
       .send({ channel: 'global', username: 'Alex', message: 'Hey' });
 
     expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ok');
     expect(client._channelSend).toHaveBeenCalled();
+  });
+
+  it('should handle channel:global with explicit type:chat (both fields)', async () => {
+    const res = await request(getApp())
+      .post('/srvchat')
+      .set('x-webhook-secret', 'test-webhook-secret')
+      .send({ channel: 'global', type: 'chat', username: 'Alex', message: 'Hey' });
+
+    expect(res.status).toBe(200);
   });
 });
 
@@ -233,10 +243,11 @@ describe('POST /srvchat — edge cases', () => {
       .set('x-webhook-secret', 'test-webhook-secret')
       .send({});
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid payload');
   });
 
-  it('should handle unknown event types by relaying as chat', async () => {
+  it('should reject unknown event types with 400', async () => {
     const res = await request(getApp())
       .post('/srvchat')
       .set('x-webhook-secret', 'test-webhook-secret')
@@ -246,18 +257,53 @@ describe('POST /srvchat — edge cases', () => {
         message: 'Something happened',
       });
 
-    expect(res.status).toBe(200);
-    expect(client._channelSend).toHaveBeenCalled();
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid payload');
   });
 
-  it('should not crash when the configured channel is missing', async () => {
-    client.channels.fetch.mockRejectedValue(new Error('Unknown Channel'));
-
+  it('should return 400 when required fields are missing from a typed payload', async () => {
     const res = await request(getApp())
       .post('/srvchat')
       .set('x-webhook-secret', 'test-webhook-secret')
-      .send({ type: 'chat', username: 'Steve', message: 'Hi' });
+      .send({ type: 'chat' }); // missing username and message
 
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid payload');
+    expect(res.body.details).toBeDefined();
+  });
+
+  it('should return 400 when join payload has no username', async () => {
+    const res = await request(getApp())
+      .post('/srvchat')
+      .set('x-webhook-secret', 'test-webhook-secret')
+      .send({ type: 'join' }); // missing username
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid payload');
+  });
+
+  it('should handle database errors gracefully in relayMessage', async () => {
+    client.channels.fetch.mockRejectedValue(new Error('Unknown Channel'));
+
+    // Use a message that will pass Zod validation but hit a channel
+    // fetch error in relayMessage.
+    const res = await request(getApp())
+      .post('/srvchat')
+      .set('x-webhook-secret', 'test-webhook-secret')
+      .send({ type: 'chat', username: 'Test', message: 'Hello' });
+
+    // The route catches the error and still responds 200 to the webhook
+    // caller — the error is only logged internally.
     expect(res.status).toBe(200);
+  });
+
+  it('should return 400 when payload body is a string', async () => {
+    const res = await request(getApp())
+      .post('/srvchat')
+      .set('x-webhook-secret', 'test-webhook-secret')
+      .set('Content-Type', 'application/json')
+      .send('""');
+
+    expect(res.status).toBe(400);
   });
 });

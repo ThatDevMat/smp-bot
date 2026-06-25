@@ -2,7 +2,7 @@
  * /poi — Manage points of interest on the server.
  *
  * Subcommands: add, list (paginated embeds), remove (staff only).
- * Embed building is delegated to shared helpers in src/utils/embeds.js.
+ * All inputs validated through Zod schemas before processing.
  */
 
 const { SlashCommandBuilder } = require('discord.js');
@@ -10,6 +10,8 @@ const db = require('../db');
 const { requireStaff } = require('../utils/permissions');
 const { poiRegisteredEmbed, poiListEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
+const { validateInput } = require('../utils/validate');
+const { AddPOIInput, RemovePOIInput } = require('../schemas/pois');
 
 const POIS_PER_PAGE = 5;
 
@@ -94,40 +96,52 @@ module.exports = {
 /* ------------------------------------------------------------------ */
 
 async function handleAdd(interaction) {
-  const name = interaction.options.getString('name');
-  const x = interaction.options.getNumber('x');
-  const y = interaction.options.getNumber('y');
-  const z = interaction.options.getNumber('z');
-  const dimension = interaction.options.getString('dimension');
-  const description = interaction.options.getString('description');
+  // 1. Validate input.
+  const rawInput = {
+    name: interaction.options.getString('name'),
+    x: interaction.options.getNumber('x'),
+    y: interaction.options.getNumber('y'),
+    z: interaction.options.getNumber('z'),
+    dimension: interaction.options.getString('dimension'),
+    description: interaction.options.getString('description'),
+  };
 
-  // Reject excessively long names (DB column is TEXT, but Discord UX suffers).
-  if (name.length > 64) {
+  let input;
+  try {
+    input = validateInput(AddPOIInput, rawInput);
+  } catch (err) {
     return interaction.reply({
-      content: '\u274C POI name must be 64 characters or fewer.',
+      content: `\u274C ${err.userMessage}`,
       ephemeral: true,
     });
   }
 
-  const existing = db.getPoiByName(name);
+  const existing = db.getPoiByName(input.name);
   if (existing) {
     return interaction.reply({
-      content: `\u274C A POI named "${name}" already exists.`,
+      content: `\u274C A POI named "${input.name}" already exists.`,
       ephemeral: true,
     });
   }
 
   db.addPoi({
-    name,
-    x,
-    y,
-    z,
-    dimension,
-    description,
+    name: input.name,
+    x: input.x,
+    y: input.y,
+    z: input.z,
+    dimension: input.dimension,
+    description: input.description,
     createdBy: interaction.user.id,
   });
 
-  const embed = poiRegisteredEmbed({ name, x, y, z, dimension, description });
+  const embed = poiRegisteredEmbed({
+    name: input.name,
+    x: input.x,
+    y: input.y,
+    z: input.z,
+    dimension: input.dimension,
+    description: input.description,
+  });
   await interaction.reply({ embeds: [embed] });
 }
 
@@ -150,27 +164,39 @@ async function handleList(interaction) {
         embeds: [poiListEmbed(slice, page + 1, totalPages)],
       });
     }
-    // Future improvement: use button pagination to navigate pages.
-    // For now the operator sees the first page only.
   }
 }
 
 async function handleRemove(interaction) {
-  if (!requireStaff(interaction)) return;
+  // 1. Validate input.
+  const rawInput = {
+    name: interaction.options.getString('name'),
+  };
 
-  const name = interaction.options.getString('name');
-  const poi = db.getPoiByName(name);
-
-  if (!poi) {
+  let input;
+  try {
+    input = validateInput(RemovePOIInput, rawInput);
+  } catch (err) {
     return interaction.reply({
-      content: `\u274C No POI found with name "${name}".`,
+      content: `\u274C ${err.userMessage}`,
       ephemeral: true,
     });
   }
 
-  db.removePoi(name);
+  if (!requireStaff(interaction)) return;
+
+  const poi = db.getPoiByName(input.name);
+
+  if (!poi) {
+    return interaction.reply({
+      content: `\u274C No POI found with name "${input.name}".`,
+      ephemeral: true,
+    });
+  }
+
+  db.removePoi(input.name);
   await interaction.reply({
-    content: `\u2705 POI "${name}" removed.`,
+    content: `\u2705 POI "${input.name}" removed.`,
     ephemeral: true,
   });
 }

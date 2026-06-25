@@ -38,16 +38,15 @@ describe('/whitelist', () => {
 
     it('should reject invalid usernames', async () => {
       interaction.options.getSubcommand.mockReturnValue('add');
-      interaction.options._setOption('username', 'Steve; op Notch');
-      rcon.whitelistAdd.mockRejectedValue(
-        new Error('Invalid Minecraft username'),
-      );
+      interaction.options._setOption('username', 'A'); // too short for MinecraftUsername
 
       await whitelistCommand.execute(interaction);
 
-      expect(interaction.editReply).toHaveBeenCalledWith({
-        content: expect.stringContaining('Could not'),
+      expect(interaction.reply).toHaveBeenCalledWith({
+        content: expect.stringContaining('3'),
+        ephemeral: true,
       });
+      expect(rcon.whitelistAdd).not.toHaveBeenCalled();
     });
 
     it('should require staff role', async () => {

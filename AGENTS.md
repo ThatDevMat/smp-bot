@@ -27,6 +27,7 @@ better-sqlite3, mysql2, and rcon-client.
 | `src/db/`                          | SQLite schema initialisation and all query helpers                                           |
 | `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                              |
 | `src/utils/`                       | Embed builders, permission checks, player UUID resolution, logger, backup, cache, shutdown handlers |
+| **`src/schemas/`**                 | **Zod validation schemas for all command inputs and webhook payloads**                            |
 | `src/config.js`                    | dotenv config loader with `validateConfig()`                                                 |
 | `src/index.js`                     | Entry point — boot sequence, never excluded from lint                                        |
 | `tests/`                           | Jest test files mirroring `src/` structure                                                   |
@@ -97,6 +98,13 @@ These boundaries must never be violated:
   `invalidateUUIDCache`, `getCachedServerStatus`, or `setCachedServerStatus`
   instead.
 
+- **All user input and webhook payload validation must go through
+  `src/utils/validate.js` using a schema from `src/scheams/`.**
+  _Violation:_ calling `interaction.options.getString()` and using the raw
+  value without first validating it through `validateInput()` and a Zod
+  schema.  Every command must extract its raw options into a plain object,
+  pass it through `validateInput()`, and use the typed result.
+
 ---
 
 ## 4. Commands Reference
@@ -143,6 +151,22 @@ Any new command must also be added to `deploy-commands.js` (it auto-discovers
 files in `src/commands/`, so no import change is needed — just verify the
 file exists and exports `data`). Every new command must have corresponding
 unit tests before the PR is opened.
+
+### Adding a new slash command checklist — validation
+
+When adding a new slash command, in addition to the checklist in
+`docs/CONTRIBUTING.md`:
+
+1. **Define a Zod schema** in the appropriate `src/schemas/` file for all
+   command inputs **before** writing the `execute()` function.
+2. **Validate at the very start** of `execute()` — extract raw options into
+   a plain object, pass it through `validateInput()`, and use the validated
+   data for the rest of the function.
+3. **Never access `interaction.options` values** that form command input
+   without first validating them through a schema.  Meta-options like
+   `getSubcommand()` are exempt — only actual user input must be validated.
+4. **Add test cases** for both valid and invalid input — invalid input must
+   produce an ephemeral error reply and not execute any business logic.
 
 ---
 

@@ -3,6 +3,7 @@
  *
  * Staff-only.  Accepts a Minecraft username or UUID, resolves it via
  * the Mojang API if needed, then queries the AdvancedBans MySQL DB.
+ * Input validated through Zod before processing.
  */
 
 const { SlashCommandBuilder } = require('discord.js');
@@ -11,6 +12,8 @@ const { requireStaff } = require('../utils/permissions');
 const { resolvePlayer } = require('../utils/playerResolver');
 const { activePunishmentsEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
+const { validateInput } = require('../utils/validate');
+const { CheckPunishmentsInput } = require('../schemas/moderation');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,16 +27,29 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    // 1. Validate input.
+    const rawInput = {
+      player: interaction.options.getString('player'),
+    };
+
+    let input;
+    try {
+      input = validateInput(CheckPunishmentsInput, rawInput);
+    } catch (err) {
+      return interaction.reply({
+        content: `\u274C ${err.userMessage}`,
+        ephemeral: true,
+      });
+    }
+
     if (!requireStaff(interaction)) return;
     await interaction.deferReply({ ephemeral: true });
 
-    const input = interaction.options.getString('player');
-
     try {
-      const player = await resolvePlayer(input);
+      const player = await resolvePlayer(input.player);
       if (!player) {
         return interaction.editReply({
-          content: `\u274C Could not find Minecraft account "${input}".`,
+          content: `\u274C Could not find Minecraft account "${input.player}".`,
         });
       }
 
@@ -49,7 +65,7 @@ module.exports = {
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {
       logger.error('Checkbans query failed', {
-        player: input,
+        player: input.player,
         userId: interaction.user.id,
         error: err.message,
         stack: err.stack,

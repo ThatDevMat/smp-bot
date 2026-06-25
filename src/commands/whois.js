@@ -1,13 +1,15 @@
 /**
  * /whois — Look up a Discord user's registered Minecraft account.
  *
- * Requires the target to have previously run /register.
+ * Input validated through Zod before database access.
  */
 
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../db');
 const { whoisEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
+const { validateInput } = require('../utils/validate');
+const { WhoisInput } = require('../schemas/players');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,15 +23,29 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const target = interaction.options.getUser('user');
+    // 1. Validate input from the user option.
+    const targetUser = interaction.options.getUser('user');
+    const rawInput = {
+      user: targetUser ? targetUser.id : null,
+    };
+
+    let input;
+    try {
+      input = validateInput(WhoisInput, rawInput);
+    } catch (err) {
+      return interaction.reply({
+        content: `\u274C ${err.userMessage}`,
+        ephemeral: true,
+      });
+    }
 
     try {
-      const registration = db.getPlayerByDiscord(target.id);
+      const registration = db.getPlayerByDiscord(input.user);
 
       if (!registration) {
         return interaction.reply({
           content:
-            `\u274C <@${target.id}> has not registered a Minecraft account yet. ` +
+            `\u274C <@${input.user}> has not registered a Minecraft account yet. ` +
             'Use `/register` to link one.',
           ephemeral: true,
         });
@@ -39,7 +55,7 @@ module.exports = {
       await interaction.reply({ embeds: [embed] });
     } catch (err) {
       logger.error('Whois lookup error', {
-        targetId: target.id,
+        targetId: input.user,
         userId: interaction.user.id,
         error: err.message,
         stack: err.stack,

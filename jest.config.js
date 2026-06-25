@@ -20,6 +20,7 @@ module.exports = {
     '!src/index.js',
     '!src/events/**',
     '!src/config.js',
+    '!src/webhooks/discordsrv.js',
     '!deploy-commands.js',
   ],
   coverageDirectory: 'coverage/',

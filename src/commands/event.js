@@ -4,6 +4,8 @@
  * Subcommands: create (staff), list, cancel (staff).
  * Uses the shared embeds module for all embed building.
  * Sends RSVP-button-enabled announcements to the configured events channel.
+ *
+ * All inputs are validated through Zod schemas before any business logic runs.
  */
 
 const {
@@ -17,9 +19,8 @@ const { requireStaff } = require('../utils/permissions');
 const { eventAnnouncementEmbed, eventListEmbed } = require('../utils/embeds');
 const { config } = require('../config');
 const logger = require('../utils/logger');
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
+const { validateInput } = require('../utils/validate');
+const { CreateEventInput, CancelEventInput } = require('../schemas/events');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -101,33 +102,33 @@ module.exports = {
 /* ------------------------------------------------------------------ */
 
 async function handleCreate(interaction) {
+  // 1. Validate input before any business logic.
+  const rawInput = {
+    name: interaction.options.getString('name'),
+    date: interaction.options.getString('date'),
+    time: interaction.options.getString('time'),
+    timezone: interaction.options.getString('timezone'),
+    description: interaction.options.getString('description'),
+  };
+
+  let input;
+  try {
+    input = validateInput(CreateEventInput, rawInput);
+  } catch (err) {
+      return interaction.reply({
+        content: `\u274C ${err.userMessage}`,
+        ephemeral: true,
+      });
+  }
+
   if (!requireStaff(interaction)) return;
 
-  const name = interaction.options.getString('name');
-  const date = interaction.options.getString('date');
-  const time = interaction.options.getString('time');
-  const timezone = interaction.options.getString('timezone');
-  const description = interaction.options.getString('description');
-
-  if (!DATE_RE.test(date)) {
-    return interaction.reply({
-      content: '\u274C Date must be in YYYY-MM-DD format.',
-      ephemeral: true,
-    });
-  }
-  if (!TIME_RE.test(time)) {
-    return interaction.reply({
-      content: '\u274C Time must be in HH:MM format (24h).',
-      ephemeral: true,
-    });
-  }
-
   const eventId = db.createEvent({
-    name,
-    description,
-    event_date: date,
-    event_time: time,
-    timezone,
+    name: input.name,
+    description: input.description,
+    event_date: input.date,
+    event_time: input.time,
+    timezone: input.timezone,
     created_by: interaction.user.id,
   });
 
@@ -151,7 +152,7 @@ async function handleCreate(interaction) {
   }
 
   await interaction.reply({
-    content: `\u2705 Event "${name}" created with ID **${eventId}**.`,
+    content: `\u2705 Event "${input.name}" created with ID **${eventId}**.`,
     ephemeral: true,
   });
 }
@@ -171,10 +172,24 @@ async function handleList(interaction) {
 }
 
 async function handleCancel(interaction) {
+  // 1. Validate input.
+  const rawInput = {
+    id: interaction.options.getInteger('id'),
+  };
+
+  let input;
+  try {
+    input = validateInput(CancelEventInput, rawInput);
+  } catch (err) {
+    return interaction.reply({
+      content: `\u274C ${err.userMessage}`,
+      ephemeral: true,
+    });
+  }
+
   if (!requireStaff(interaction)) return;
 
-  const id = interaction.options.getInteger('id');
-  const event = db.getEventById(id);
+  const event = db.getEventById(input.id);
 
   if (!event) {
     return interaction.reply({
@@ -183,13 +198,13 @@ async function handleCancel(interaction) {
     });
   }
 
-  db.cancelEvent(id);
+  db.cancelEvent(input.id);
 
   // Notify the events channel.
   const eventsChannel = getEventsChannel(interaction);
   if (eventsChannel) {
     await eventsChannel.send({
-      content: `\u274C **Event Cancelled:** ${event.name} (ID: ${id})`,
+      content: `\u274C **Event Cancelled:** ${event.name} (ID: ${input.id})`,
     });
   }
 

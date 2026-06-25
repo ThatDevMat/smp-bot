@@ -2,14 +2,16 @@
  * /whitelist — Manage Minecraft server whitelist via RCON.
  *
  * Both subcommands are staff-only. User-supplied usernames are
- * validated against the Minecraft format before being sent to RCON
- * to prevent command injection.
+ * validated against the Minecraft format via Zod before being sent
+ * to RCON to prevent command injection.
  */
 
 const { SlashCommandBuilder } = require('discord.js');
 const rcon = require('../integrations/rcon');
 const { requireStaff } = require('../utils/permissions');
 const logger = require('../utils/logger');
+const { validateInput } = require('../utils/validate');
+const { WhitelistInput } = require('../schemas/players');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -39,27 +41,41 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    // 1. Validate input.
+    const rawInput = {
+      username: interaction.options.getString('username'),
+    };
+
+    let input;
+    try {
+      input = validateInput(WhitelistInput, rawInput);
+    } catch (err) {
+      return interaction.reply({
+        content: `\u274C ${err.userMessage}`,
+        ephemeral: true,
+      });
+    }
+
     if (!requireStaff(interaction)) return;
     await interaction.deferReply({ ephemeral: true });
 
     const subcommand = interaction.options.getSubcommand();
-    const username = interaction.options.getString('username');
 
     try {
       let response;
       if (subcommand === 'add') {
-        response = await rcon.whitelistAdd(username);
+        response = await rcon.whitelistAdd(input.username);
       } else {
-        response = await rcon.whitelistRemove(username);
+        response = await rcon.whitelistRemove(input.username);
       }
 
       await interaction.editReply({
-        content: `\u2705 \`${username}\` ${subcommand === 'add' ? 'added to' : 'removed from'} the whitelist.\n\`\`\`${response}\`\`\``,
+        content: `\u2705 \`${input.username}\` ${subcommand === 'add' ? 'added to' : 'removed from'} the whitelist.\n\`\`\`${response}\`\`\``,
       });
     } catch (err) {
       logger.error('Whitelist command error', {
         subcommand,
-        username,
+        username: input.username,
         userId: interaction.user.id,
         error: err.message,
         stack: err.stack,

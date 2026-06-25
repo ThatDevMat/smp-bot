@@ -58,6 +58,11 @@ describe('/poi', () => {
     it('should reject duplicate POI names', async () => {
       interaction.options.getSubcommand.mockReturnValue('add');
       interaction.options._setOption('name', 'Spawn Village');
+      interaction.options._setOption('x', 0);
+      interaction.options._setOption('y', 64);
+      interaction.options._setOption('z', 0);
+      interaction.options._setOption('dimension', 'overworld');
+      interaction.options._setOption('description', 'Town center at the world origin');
       db.getPoiByName.mockReturnValue({ name: 'Spawn Village' });
 
       await poiCommand.execute(interaction);

@@ -85,11 +85,11 @@ describe('/whois', () => {
   });
 
   it('should show player details when the user is registered', async () => {
-    const targetUser = { id: '222222', tag: 'TestUser#1234' };
+    const targetUser = { id: '123456789012345678', tag: 'TestUser#1234' };
     interaction.options.getUser.mockReturnValue(targetUser);
 
     db.getPlayerByDiscord.mockReturnValue({
-      discord_id: '222222',
+      discord_id: '123456789012345678',
       minecraft_username: 'Alex',
       minecraft_uuid: 'def456',
       registered_at: '2026-01-15T12:00:00Z',
@@ -110,7 +110,7 @@ describe('/whois', () => {
   });
 
   it('should tell the user to register when not found', async () => {
-    const targetUser = { id: '222222', tag: 'TestUser#1234' };
+    const targetUser = { id: '123456789012345678', tag: 'TestUser#1234' };
     interaction.options.getUser.mockReturnValue(targetUser);
     db.getPlayerByDiscord.mockReturnValue(undefined);
 
@@ -123,7 +123,7 @@ describe('/whois', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    const targetUser = { id: '222222', tag: 'TestUser#1234' };
+    const targetUser = { id: '123456789012345678', tag: 'TestUser#1234' };
     interaction.options.getUser.mockReturnValue(targetUser);
     db.getPlayerByDiscord.mockImplementation(() => {
       throw new Error('DB error');

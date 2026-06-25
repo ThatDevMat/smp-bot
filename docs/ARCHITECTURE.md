@@ -288,6 +288,60 @@ useful before testing or after a Mojang API rate-limit incident.
 
 ---
 
+## Validation
+
+All user input and incoming webhook payloads are validated against Zod
+schemas before any business logic runs. The validation layer is centralized
+in `src/schemas/` (schema definitions) and `src/utils/validate.js` (the
+`validateInput()` helper and `ValidationError` class).
+
+### Where schemas live
+
+| File                       | Validates                          |
+| -------------------------- | ---------------------------------- |
+| `src/schemas/common.js`    | Reusable primitives (MinecraftUsername, UUID, Dimension, Coordinate, FutureDate, TimeString, Timezone, DiscordSnowflake) |
+| `src/schemas/events.js`    | `/event create` and `/event cancel` |
+| `src/schemas/players.js`   | `/register`, `/whois`, `/whitelist` |
+| `src/schemas/moderation.js`| `/warn`, `/checkbans`, `/history`, `/warnings` |
+| `src/schemas/pois.js`      | `/poi add` and `/poi remove`       |
+| `src/schemas/season.js`    | `/season set`                      |
+| `src/schemas/webhooks.js`  | DiscordSRV webhook payloads (discriminated union on `type`) |
+
+### The validateInput() pattern
+
+Every command follows this exact flow:
+
+```
+raw input object → validateInput(schema, raw) → typed output
+                       ↓ on failure
+                ValidationError thrown
+                       ↓ caught in execute()
+                ephemeral reply with userMessage
+```
+
+Key rules:
+- `validateInput()` never throws a raw `ZodError` — it always wraps it in
+  a `ValidationError` that carries both a user-friendly message (`userMessage`)
+  and the full Zod error object (`zodError` for logging).
+- Slash commands catch `ValidationError` and reply ephemerally with
+  `err.userMessage`. They never propagate Zod errors to the user.
+- Webhook handlers catch `ValidationError` and return HTTP 400 with
+  `err.zodError.flatten()` in the response body, logging the raw payload at
+  debug level.
+- Raw `ZodError` instances must never be thrown uncaught or passed directly
+  to the user — this is enforced by the helper architecture.
+
+### Adding a new command with validation
+
+1. Define a Zod schema in the appropriate `src/schemas/` file before writing
+   the `execute()` function.
+2. At the top of `execute()`, extract raw `interaction.options` into a plain
+   object and call `validateInput()`.
+3. Use the returned typed data for the rest of the function.
+4. Add test cases for both valid and invalid input.
+
+---
+
 ## Key Design Decisions
 
 ### Why SQLite for local data (not a second MySQL database)

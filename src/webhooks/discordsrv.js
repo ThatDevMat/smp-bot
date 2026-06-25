@@ -5,12 +5,9 @@
  * and relays them to the appropriate Discord text channels as rich
  * embeds.
  *
- * Expected payload shape:
- *   { channel, username, message, type }
- * where type is one of: chat | join | leave | death | advancement | start | stop
- *
- * Every incoming request validates the shared secret (if configured)
- * and checks that required fields are present before acting.
+ * Incoming payloads are validated against a Zod discriminated union
+ * before any field is accessed.  Invalid payloads return 400 with a
+ * flattened error report and are logged at debug level.
  */
 
 const express = require('express');
@@ -23,6 +20,8 @@ const {
   advancementEmbed,
   serverEventEmbed,
 } = require('../utils/embeds');
+const { validateInput } = require('../utils/validate');
+const { DiscordSRVPayload } = require('../schemas/webhooks');
 
 let client = null;
 let app;
@@ -50,12 +49,11 @@ function init(discordClient) {
   // Warn operators if the webhook secret is left empty.
   if (!config.webhook.secret) {
     logger.warn(
-      'WEBHOOK_SECRET is not set — anyone who knows your server address can POST to /srvchat',
+      'WEBHOOK_SECRET is not set \u2014 anyone who knows your server address can POST to /srvchat',
     );
   }
 
-  // Health-check endpoint (no auth required — must be before the
-  // secret middleware so it stays accessible when secret is configured).
+  // Health-check endpoint (no auth required).
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
@@ -73,47 +71,65 @@ function init(discordClient) {
 
   app.post('/srvchat', async (req, res) => {
     try {
-      const payload = req.body;
-
-      if (!payload || typeof payload !== 'object') {
-        return res.status(400).json({ error: 'Empty or non-object payload' });
+      // Validate the payload immediately after parsing.
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ error: 'Invalid payload' });
       }
 
-      // Validate that at least one useful field is present.
-      const { channel, username, message, type } = payload;
-      const eventType = type || channel || 'chat';
+      // Normalize legacy DiscordSRV format: { channel: 'global', ... }
+      // rather than { type: 'chat', ... } so Zod's discriminatedUnion can
+      // parse it.
+      const bodyToValidate = { ...req.body };
+      if (bodyToValidate.channel === 'global' && !bodyToValidate.type) {
+        bodyToValidate.type = 'chat';
+      }
 
-      switch (eventType) {
+      let payload;
+      try {
+        payload = validateInput(DiscordSRVPayload, bodyToValidate);
+      } catch (err) {
+        // validateInput always throws ValidationError — ZodErrors are
+        // caught and wrapped internally.
+        logger.debug('Invalid webhook payload received', {
+          raw: req.body,
+          error: err.zodError,
+        });
+        return res.status(400).json({
+          error: 'Invalid payload',
+          details: err.zodError.flatten(),
+        });
+      }
+
+      switch (payload.type) {
         case 'chat':
-        case 'global':
           await relayMessage(
             'minecraftChat',
-            chatMessageEmbed(username, message),
+            chatMessageEmbed(payload.username, payload.message),
           );
           break;
 
         case 'join':
-          await relayMessage('serverLog', playerEventEmbed(username, 'join'));
+          await relayMessage('serverLog', playerEventEmbed(payload.username, 'join'));
           break;
 
         case 'leave':
-          await relayMessage('serverLog', playerEventEmbed(username, 'leave'));
+          await relayMessage('serverLog', playerEventEmbed(payload.username, 'leave'));
           break;
 
         case 'death':
           await relayMessage(
             'serverLog',
-            playerEventEmbed(username || message, 'death'),
+            playerEventEmbed(payload.username || payload.message, 'death'),
           );
           break;
 
         case 'advancement': {
           const advTitle =
-            payload.advancement || message || 'Unknown Advancement';
-          const advDescription = payload.description || '';
+            payload.advancementTitle || payload.advancement || payload.message || 'Unknown Advancement';
+          const advDescription = payload.advancementDescription || payload.description || '';
           await relayMessage(
             'serverLog',
-            advancementEmbed(username, advTitle, advDescription),
+            advancementEmbed(payload.username, advTitle, advDescription),
           );
           break;
         }
@@ -127,12 +143,11 @@ function init(discordClient) {
           break;
 
         default:
-          // Unknown type — relay as a generic chat message.
           await relayMessage(
             'minecraftChat',
             chatMessageEmbed(
-              username || 'Server',
-              message || JSON.stringify(payload),
+              payload.username || 'Server',
+              payload.message || JSON.stringify(payload),
             ),
           );
       }
@@ -166,11 +181,8 @@ async function relayMessage(channelKey, embed) {
   const channelId = config.channels[channelKey];
 
   if (!channelId) {
-    // Not configured — this is normal if the operator only uses a subset
-    // of channels, so log at debug level (info for now, but could be
-    // moved to debug in production).
     logger.info(
-      `DiscordSRV channel "${channelKey}" not configured — skipping message`,
+      `DiscordSRV channel "${channelKey}" not configured \u2014 skipping message`,
     );
     return;
   }
