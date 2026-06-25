@@ -436,6 +436,43 @@ function formatDuration(ms) {
 /*  Exports                                                            */
 /* ------------------------------------------------------------------ */
 
+/** Human-friendly byte size formatting. */
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Backup                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Embed for the /backup command result.
+ */
+function backupResultEmbed({ fileName, sizeBytes, durationMs }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.GREEN)
+    .setTitle('\u{1F4BE} Backup Complete')
+    .addFields(
+      { name: 'File', value: `\`${fileName}\``, inline: false },
+      { name: 'Size', value: formatBytes(sizeBytes), inline: true },
+      {
+        name: 'Duration',
+        value: durationMs >= 1000
+          ? `${(durationMs / 1000).toFixed(1)}s`
+          : `${durationMs}ms`,
+        inline: true,
+      },
+    )
+    .setTimestamp();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Exports                                                            */
+/* ------------------------------------------------------------------ */
+
 module.exports = {
   statusEmbed,
   chatMessageEmbed,
@@ -455,5 +492,7 @@ module.exports = {
   localWarningsEmbed,
   registrationEmbed,
   whoisEmbed,
+  backupResultEmbed,
   formatDuration,
+  formatBytes,
 };

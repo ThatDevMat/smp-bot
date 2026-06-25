@@ -50,6 +50,13 @@ const config = {
   },
 
   staffRoleIds: (process.env.STAFF_ROLE_IDS || '').split(',').filter(Boolean),
+
+  backup: {
+    dir: process.env.BACKUP_DIR || './backups',
+    cron: process.env.BACKUP_CRON || '0 3 * * *',
+    retainDaily: parseInt(process.env.BACKUP_RETAIN_DAILY, 10) || 30,
+    retainWeekly: parseInt(process.env.BACKUP_RETAIN_WEEKLY, 10) || 4,
+  },
 };
 
 function validateConfig() {

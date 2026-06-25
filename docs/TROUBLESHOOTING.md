@@ -255,13 +255,13 @@ their name on Mojang's side.
 
 ---
 
+---
 **Problem:** Log files are growing too large
 
 **Likely cause:** `LOG_LEVEL` is set to `debug` in a production environment,
 causing every HTTP request and debug message to be written to disk.
 
 **Fix:**
-
 1. Set `LOG_LEVEL=info` in the production `.env` file.
 2. The rotating file transport automatically deletes logs older than 14 days
    and gzips rotated files. If disk space is still tight, check that no
@@ -271,6 +271,36 @@ causing every HTTP request and debug message to be written to disk.
    du -sh logs/
    ls -la logs/
    ```
+
+---
+
+**Problem:** `backups/` is filling up disk space
+
+**Likely cause:** `BACKUP_RETAIN_DAILY` or `BACKUP_RETAIN_WEEKLY` set too
+high, or pruning failed silently (e.g. the bot lost write permission to the
+`backups/` directory).
+
+**Fix:**
+1. Check the bot logs for pruning errors:
+   ```bash
+   grep -i 'prune\|backup' logs/combined-*.log
+   ```
+2. Manually remove old `.db.gz` files from the `backups/` directory if disk
+   space is urgently needed:
+   ```bash
+   ls -lh backups/
+   rm backups/backup-OLDEST-FILES-HERE.db.gz
+   ```
+3. Ensure the bot has write permission to the `backups/` directory:
+   ```bash
+   chmod -R 755 backups/
+   ```
+4. Reduce retention in `.env`:
+   ```
+   BACKUP_RETAIN_DAILY=14
+   BACKUP_RETAIN_WEEKLY=2
+   ```
+5. Restart the bot for new retention settings to take effect.
 
 ---
 

@@ -19,29 +19,30 @@ better-sqlite3, mysql2, and rcon-client.
 
 ## 2. Repository Map
 
-| Path                               | Purpose                                                               |
-| ---------------------------------- | --------------------------------------------------------------------- |
-| `src/commands/`                    | 12 slash command handlers, one file per command                       |
-| `src/events/`                      | discord.js lifecycle event handlers (ready.js, interactionCreate.js)  |
-| `src/webhooks/`                    | Express router for the DiscordSRV webhook receiver                    |
-| `src/db/`                          | SQLite schema initialisation and all query helpers                    |
-| `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us       |
-| `src/utils/`                       | Embed builders, permission checks, player UUID resolution             |
-| `src/config.js`                    | dotenv config loader with `validateConfig()`                          |
-| `src/index.js`                     | Entry point — boot sequence, never excluded from lint                 |
-| `tests/`                           | Jest test files mirroring `src/` structure                            |
-| `tests/setup.js`                   | Shared test factories and mocks                                       |
-| `.github/workflows/ci.yml`         | CI pipeline (lint → test + security audit)                            |
-| `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                           |
-| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                 |
-| `.github/ISSUE_TEMPLATE/`          | Bug report and feature request templates                              |
-| `docs/`                            | Onboarding, architecture, contributing, integrations, troubleshooting |
-| `jest.config.js`                   | Jest config with 80% coverage threshold                               |
-| `ecosystem.config.js`              | PM2 process manager config                                            |
-| `.eslintrc.json`                   | ESLint rules                                                          |
-| `.prettierrc`                      | Prettier formatting configuration                                     |
-| `.env.example`                     | Template for all required environment variables                       |
-| `deploy-commands.js`               | Script to register slash commands with the Discord REST API           |
+| Path                               | Purpose                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `src/commands/`                    | 12 slash command handlers, one file per command                                              |
+| `src/events/`                      | discord.js lifecycle event handlers (ready.js, interactionCreate.js)                         |
+| `src/webhooks/`                    | Express router for the DiscordSRV webhook receiver                                           |
+| `src/db/`                          | SQLite schema initialisation and all query helpers                                           |
+| `src/integrations/`                | Wrappers for RCON, AdvancedBans MySQL, Mojang API, mcsrvstat.us                              |
+| `src/utils/`                       | Embed builders, permission checks, player UUID resolution, logger, backup, shutdown handlers |
+| `src/config.js`                    | dotenv config loader with `validateConfig()`                                                 |
+| `src/index.js`                     | Entry point — boot sequence, never excluded from lint                                        |
+| `tests/`                           | Jest test files mirroring `src/` structure                                                   |
+| `tests/setup.js`                   | Shared test factories and mocks                                                              |
+| `.github/workflows/ci.yml`         | CI pipeline (lint → test + security audit)                                                   |
+| `.github/workflows/deploy.yml`     | Deploy pipeline (SSH + pm2)                                                                  |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist template                                                                        |
+| `.github/ISSUE_TEMPLATE/`          | Bug report and feature request templates                                                     |
+| `docs/`                            | Onboarding, architecture, contributing, integrations, troubleshooting, restore guide         |
+| `backups/`                         | Automated SQLite backup files (gitignored — managed by the backup scheduler)                 |
+| `jest.config.js`                   | Jest config with 80% coverage threshold                                                      |
+| `ecosystem.config.js`              | PM2 process manager config                                                                   |
+| `.eslintrc.json`                   | ESLint rules                                                                                 |
+| `.prettierrc`                      | Prettier formatting configuration                                                            |
+| `.env.example`                     | Template for all required environment variables                                              |
+| `deploy-commands.js`               | Script to register slash commands with the Discord REST API                                  |
 
 ### Files and directories you must NEVER modify without explicit instruction
 
@@ -51,6 +52,8 @@ better-sqlite3, mysql2, and rcon-client.
 - **`package-lock.json`** — never edit by hand. Let npm manage it.
 - **The AdvancedBans MySQL schema** — external system, read-only. The bot
   only queries it; never suggest altering it.
+- **`backups/`** — automated backup output, gitignored. Do not delete or
+  modify files here manually — they are managed by the backup scheduler.
 - **`coverage/`** — generated output, gitignored. Delete and regenerate with
   `npm run test:coverage`.
 - **`logs/`** — runtime output, gitignored. Never reference these files in
@@ -92,6 +95,7 @@ These boundaries must never be violated:
 
 | Command      | File                        | Staff Only                   | Description                                                          | Dependencies                                   |
 | ------------ | --------------------------- | ---------------------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
+| `/backup`    | `src/commands/backup.js`    | Yes                          | Triggers an immediate SQLite database backup                         | SQLite (backup API), filesystem                |
 | `/status`    | `src/commands/status.js`    | No                           | Shows server online status, player count, list of online players     | RCON (primary), mcsrvstat.us (fallback)        |
 | `/event`     | `src/commands/event.js`     | Create/Cancel: Yes; List: No | Create, list, and cancel scheduled events with RSVP                  | SQLite (`events`, `rsvps`)                     |
 | `/register`  | `src/commands/register.js`  | No                           | Links a Discord user to a Minecraft username/UUID                    | Mojang API, SQLite (`player_registry`)         |
@@ -445,6 +449,8 @@ instruction in the current task:
 - Alter the PM2 ecosystem config without confirming the production
   deployment impact
 - Add a second logger instance — always import `src/utils/logger.js`
+- Delete or modify files in `backups/` — these are managed automatically by
+  the backup scheduler
 
 ---
 

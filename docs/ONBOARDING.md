@@ -103,6 +103,29 @@ Log files are written to `logs/combined-%DATE%.log` (all levels) and
 `logs/error-%DATE%.log` (errors only), rotated daily with 14-day retention.
 The `logs/` directory is gitignored.
 
+### Backups
+
+The SQLite database is backed up automatically every day at **03:00** server
+local time. A backup also runs immediately when the bot starts, so there is
+always a fresh backup after a deployment.
+
+Backup files are written to the `backups/` directory at the project root:
+```
+backups/
+  backup-2026-01-15T03-00-00.db.gz
+  backup-2026-01-14T03-00-00.db.gz
+```
+
+**Retention:**
+- The 30 most recent daily backups are always kept
+- Sunday (weekly) backups beyond the daily window are kept, up to 4
+
+**Manual backup:** Staff members can trigger an immediate backup using the
+`/backup` slash command. This is useful before a season reset or major
+server event.
+
+**Restore:** See `docs/RESTORE.md` for the full restore procedure.
+
 ### 3. The SQLite database
 
 The bot creates a file called `smp-bot.db` in the project root automatically

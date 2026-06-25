@@ -33,6 +33,9 @@ const TEST_ENV = {
   CHANNEL_EVENTS: '100004',
   CHANNEL_POLLS: '100005',
   STAFF_ROLE_IDS: '333333,555555',
+  BACKUP_DIR: './test-backups',
+  BACKUP_RETAIN_DAILY: '30',
+  BACKUP_RETAIN_WEEKLY: '4',
 };
 
 for (const [key, val] of Object.entries(TEST_ENV)) {

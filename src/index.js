@@ -28,6 +28,7 @@ const advancedbans = require('./integrations/advancedbans');
 const db = require('./db');
 const discordsrv = require('./webhooks/discordsrv');
 const { registerShutdownHandlers } = require('./utils/shutdown');
+const { runBackup } = require('./utils/backup');
 
 /* ------------------------------------------------------------------ */
 /*  Validate environment                                               */
@@ -110,6 +111,25 @@ let httpServer;
       checkEventReminders(client);
     });
     logger.info('Event reminder scheduler started', { interval: '30min' });
+
+    // Backup scheduler (daily at configured cron time).
+    logger.info('Backup scheduler started', { cron: config.backup.cron });
+    cron.schedule(config.backup.cron, () => {
+      runBackup().catch((err) =>
+        logger.error('Scheduled backup failed', {
+          error: err.message,
+          stack: err.stack,
+        }),
+      );
+    });
+
+    // Run one backup immediately after startup.
+    runBackup().catch((err) =>
+      logger.error('Startup backup failed', {
+        error: err.message,
+        stack: err.stack,
+      }),
+    );
 
     logger.info('Bot initialization complete');
 
