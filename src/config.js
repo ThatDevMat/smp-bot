@@ -49,9 +49,12 @@ const config = {
     serverStatus: process.env.CHANNEL_SERVER_STATUS,
     events: process.env.CHANNEL_EVENTS,
     polls: process.env.CHANNEL_POLLS,
+    auditLog: process.env.CHANNEL_AUDIT_LOG,
+    welcome: process.env.CHANNEL_WELCOME,
   },
 
   staffRoleIds: (process.env.STAFF_ROLE_IDS || '').split(',').filter(Boolean),
+  adminRoleIds: (process.env.ADMIN_ROLE_IDS || '').split(',').filter(Boolean),
 
   backup: {
     dir: process.env.BACKUP_DIR || './backups',

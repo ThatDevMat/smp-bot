@@ -12,6 +12,7 @@ const { requireStaff } = require('../utils/permissions');
 const logger = require('../utils/logger');
 const { validateInput } = require('../utils/validate');
 const { WhitelistInput } = require('../schemas/players');
+const { logAction } = require('../utils/audit');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -68,6 +69,14 @@ module.exports = {
       } else {
         response = await rcon.whitelistRemove(input.username);
       }
+
+      await logAction({
+        client: interaction.client,
+        type: subcommand === 'add' ? 'whitelist_add' : 'whitelist_remove',
+        staff: interaction.user,
+        target: input.username,
+        details: subcommand,
+      });
 
       await interaction.editReply({
         content: `\u2705 \`${input.username}\` ${subcommand === 'add' ? 'added to' : 'removed from'} the whitelist.\n\`\`\`${response}\`\`\``,

@@ -21,6 +21,7 @@ const { config } = require('../config');
 const logger = require('../utils/logger');
 const { validateInput } = require('../utils/validate');
 const { CreateEventInput, CancelEventInput } = require('../schemas/events');
+const { logAction } = require('../utils/audit');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -207,6 +208,14 @@ async function handleCancel(interaction) {
       content: `\u274C **Event Cancelled:** ${event.name} (ID: ${input.id})`,
     });
   }
+
+  await logAction({
+    client: interaction.client,
+    type: 'event_cancel',
+    staff: interaction.user,
+    target: event.name,
+    details: `Event #${input.id}`,
+  });
 
   await interaction.reply({
     content: `\u2705 Event "${event.name}" cancelled.`,

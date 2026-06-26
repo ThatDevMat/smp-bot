@@ -10,6 +10,7 @@ const { requireStaff } = require('../utils/permissions');
 const cache = require('../utils/cache');
 const { cacheStatsEmbed } = require('../utils/embeds');
 const logger = require('../utils/logger');
+const { logAction } = require('../utils/audit');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -56,8 +57,16 @@ module.exports = {
       userId: interaction.user.id,
     });
 
+    await logAction({
+      client: interaction.client,
+      type: 'cache_flush',
+      staff: interaction.user,
+      target: null,
+      details: 'Cache flushed by staff',
+    });
+
     await interaction.reply({
-      content: '\u2705 Cache has been cleared.',
+      content: '\\u2705 Cache has been cleared.',
       ephemeral: true,
     });
   },
